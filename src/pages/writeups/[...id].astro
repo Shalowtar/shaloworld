@@ -66,7 +66,7 @@ const articleSchema = {
 
       <div class="article-badges">
         <span class="badge" data-cat={data.category}>{data.category}</span>
-        <span class="badge" data-diff={data.difficulty}>{data.difficulty}</span>
+        {data.difficulty && <span class="badge" data-diff={data.difficulty}>{data.difficulty}</span>}
         {data.event && <span class="badge">{data.event}</span>}
       </div>
 

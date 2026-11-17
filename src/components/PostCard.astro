@@ -16,8 +16,14 @@ const href = `/writeups/${post.id}/`;
   <a class="entry-main" href={href} aria-label={title}>
     <div class="entry-kicker">
       <span class="k-cat" data-cat={category}>{category}</span>
-      <span class="k-sep">·</span>
-      <span>{difficulty}</span>
+      {
+        difficulty && (
+          <>
+            <span class="k-sep">·</span>
+            <span>{difficulty}</span>
+          </>
+        )
+      }
       {
         event && (
           <>

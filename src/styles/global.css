@@ -1090,8 +1090,7 @@ body {
 }
 
 /* ---------- 附件 ---------- */
-.attachments {
-  margin: 2.4em 0 0;
+.attachments {  margin: 2.4em 0 0;
   border-top: 3px solid var(--ink-strong);
   max-width: var(--measure);
 }
@@ -1132,6 +1131,24 @@ body {
 .attachments .hash {
   margin-left: auto;
   font-size: 0.7rem;
+  color: var(--ink-soft);
+}
+
+/* ---------- PDF 预览 ---------- */
+.pdf-frame {
+  display: block;
+  width: 100%;
+  height: min(78vh, 760px);
+  margin: 1.6em 0 0.9em;
+  border: 1px solid var(--rule);
+  background: var(--paper-2);
+}
+.pdf-hint {
+  max-width: var(--measure);
+  margin: 0 0 0.4em;
+  font-family: var(--font-ui);
+  font-size: 0.78rem;
+  line-height: 1.7;
   color: var(--ink-soft);
 }
 
