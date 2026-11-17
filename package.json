@@ -1,0 +1,20 @@
+{
+  "name": "doubaoworkshop-blog",
+  "type": "module",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "astro dev",
+    "start": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "new": "node scripts/new-post.mjs",
+    "astro": "astro"
+  },
+  "dependencies": {
+    "astro": "^6.4.8"
+  },
+  "devDependencies": {
+    "lxgw-wenkai-webfont": "^1.7.0"
+  }
+}

@@ -1,0 +1,39 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import EmptyState from '../../components/EmptyState.astro';
+import { getCollection } from 'astro:content';
+import { visiblePosts, tagCounts } from '../../utils/posts';
+
+const all = visiblePosts(await getCollection('writeups'));
+const tags = tagCounts(all);
+---
+
+<BaseLayout title="标签" description="按标签浏览全部 Writeup。">
+  <div class="wrap">
+    <section class="article-top">
+      <p class="breadcrumb">
+        <a href="/">~</a><span class="sep">/</span><span>tags</span>
+      </p>
+      <h1>标签</h1>
+      <div class="article-meta"><span>{tags.length} 个标签</span></div>
+    </section>
+
+    {
+      tags.length === 0 ? (
+        <EmptyState
+          title="还没有标签"
+          hint="标签来自文章 frontmatter 的 tags 字段，写第一篇后会自动汇总到这里。"
+        />
+      ) : (
+        <div class="tag-cloud">
+          {tags.map((t) => (
+            <a href={`/tags/${encodeURIComponent(t.tag)}/`}>
+              #{t.tag}
+              <span class="n">{t.count}</span>
+            </a>
+          ))}
+        </div>
+      )
+    }
+  </div>
+</BaseLayout>

@@ -1,0 +1,8 @@
+node_modules/
+dist/
+.astro/
+.preview/
+preview-*.png
+*.log
+.DS_Store
+Thumbs.db

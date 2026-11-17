@@ -1,0 +1,92 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import PostCard from '../../components/PostCard.astro';
+import EmptyState from '../../components/EmptyState.astro';
+import { getCollection } from 'astro:content';
+import { visiblePosts } from '../../utils/posts';
+import { CATEGORIES } from '../../consts';
+
+const all = visiblePosts(await getCollection('writeups'));
+const counts = CATEGORIES.map((c) => ({
+  name: c,
+  count: all.filter((p) => p.data.category === c).length,
+})).filter((c) => c.count > 0);
+---
+
+<BaseLayout title="Writeup" description="全部 CTF Writeup，按逆向 / Pwn / Crypto / Web / Misc 分类。">
+  <div class="wrap">
+    <section class="article-top">
+      <p class="breadcrumb">
+        <a href="/">~</a><span class="sep">/</span><span>writeups</span>
+      </p>
+      <h1>Writeup</h1>
+      <div class="article-meta">
+        <span>共 {all.length} 篇</span>
+        <span>按时间倒序</span>
+      </div>
+    </section>
+
+    {
+      all.length > 0 && (
+        <div class="filters" id="filters">
+          <button class="chip" data-filter="all" aria-pressed="true">全部 ({all.length})</button>
+          {counts.map((c) => (
+            <button class="chip" data-filter={c.name} aria-pressed="false">
+              {c.name} ({c.count})
+            </button>
+          ))}
+        </div>
+      )
+    }
+
+    {
+      all.length === 0 ? (
+        <EmptyState
+          title="还没有 Writeup"
+          hint="每篇题解是一个 Markdown 文件，放进 src/content/writeups/ 就会自动生成列表页和详情页。"
+          command={'npm run new "题目名" reverse'}
+        />
+      ) : (
+        <div class="post-list" id="post-list">
+          {all.map((post) => (
+            <div class="post-item" data-cat={post.data.category}>
+              <PostCard post={post} />
+            </div>
+          ))}
+        </div>
+      )
+    }
+
+    <p class="search-hint" id="filter-count" style="margin-top:22px"></p>
+  </div>
+</BaseLayout>
+
+<script is:inline>
+  (function () {
+    const buttons = document.querySelectorAll('#filters .chip');
+    const items = Array.from(document.querySelectorAll('.post-item'));
+    const counter = document.getElementById('filter-count');
+    if (!buttons.length || !items.length) return;
+
+    function apply(filter) {
+      let shown = 0;
+      items.forEach(function (item) {
+        const match = filter === 'all' || item.dataset.cat === filter;
+        item.hidden = !match;
+        if (match) shown += 1;
+      });
+      buttons.forEach(function (b) {
+        b.setAttribute('aria-pressed', b.dataset.filter === filter ? 'true' : 'false');
+      });
+      if (counter) counter.textContent = '> 匹配 ' + shown + ' 篇';
+    }
+
+    buttons.forEach(function (b) {
+      b.addEventListener('click', function () {
+        apply(b.dataset.filter);
+      });
+    });
+
+    apply('all');
+  })();
+</script>

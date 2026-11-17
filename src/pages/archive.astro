@@ -1,0 +1,60 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import EmptyState from '../components/EmptyState.astro';
+import { getCollection } from 'astro:content';
+import { visiblePosts, formatDate } from '../utils/posts';
+
+const all = visiblePosts(await getCollection('writeups'));
+
+const byYear = new Map<number, typeof all>();
+for (const post of all) {
+  const y = post.data.publishedAt.getFullYear();
+  if (!byYear.has(y)) byYear.set(y, []);
+  byYear.get(y)!.push(post);
+}
+const years = [...byYear.entries()].sort((a, b) => b[0] - a[0]);
+---
+
+<BaseLayout title="归档" description="按年份浏览全部文章。">
+  <div class="wrap">
+    <section class="article-top">
+      <p class="breadcrumb">
+        <a href="/">~</a><span class="sep">/</span><span>archive</span>
+      </p>
+      <h1>归档</h1>
+      <div class="article-meta">
+        <span>共 {all.length} 篇</span>
+        <span>{years.length} 个年份</span>
+      </div>
+    </section>
+
+    {
+      years.length === 0 ? (
+        <EmptyState
+          title="归档还是空的"
+          hint="按年份分组的时间线，文章发布后会自动归位，不需要手动维护。"
+          command={'npm run new "题目名" pwn'}
+        />
+      ) : (
+        years.map(([year, posts]) => (
+          <div class="year-group">
+            <div class="year-title">{year}</div>
+            <ul class="year-list">
+              {posts.map((post) => (
+                <li>
+                  <time datetime={post.data.publishedAt.toISOString()}>
+                    {formatDate(post.data.publishedAt)}
+                  </time>
+                  <span class="badge" data-cat={post.data.category}>
+                    {post.data.category}
+                  </span>
+                  <a href={`/writeups/${post.id}/`}>{post.data.title}</a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))
+      )
+    }
+  </div>
+</BaseLayout>

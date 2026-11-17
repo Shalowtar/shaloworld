@@ -1,0 +1,20 @@
+---
+interface Props {
+  title?: string;
+  hint?: string;
+  command?: string;
+}
+
+const {
+  title = 'no content yet',
+  hint = '还没有内容。',
+  command = '',
+} = Astro.props;
+---
+
+<div class="empty-state">
+  <div class="es-mark" aria-hidden="true">＊</div>
+  <h3>{title}</h3>
+  <p>{hint}</p>
+  {command && <div class="es-cmd"><code>{command}</code></div>}
+</div>

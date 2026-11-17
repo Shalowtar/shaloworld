@@ -1,0 +1,21 @@
+---
+import { SITE } from '../consts';
+const year = new Date().getFullYear();
+---
+
+<footer class="site-footer">
+  <div class="wrap footer-inner">
+    <div>© {year} {SITE.author} · Built with Astro</div>
+    <div class="links">
+      <a href="/rss.xml">RSS</a>
+      <a href={SITE.github} target="_blank" rel="noopener noreferrer">GitHub</a>
+      <a href="/sitemap.xml">Sitemap</a>
+      <a href="#top">回到顶部</a>
+    </div>
+  </div>
+  <div class="wrap">
+    <p class="footer-note">
+      本站内容仅为个人学习记录，所有题目均来自已公开结束的赛事，请勿用于任何未授权目标。
+    </p>
+  </div>
+</footer>

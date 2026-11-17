@@ -1,0 +1,42 @@
+---
+import { SITE } from '../consts';
+
+const path = Astro.url.pathname;
+const isActive = (href: string) =>
+  href === '/' ? path === '/' : path.startsWith(href.replace(/\/$/, ''));
+
+const today = new Intl.DateTimeFormat('zh-CN', {
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+})
+  .format(new Date())
+  .replace(/\//g, '.');
+---
+
+<header class="site-header">
+  <div class="wrap masthead">
+    <a class="logo" href="/" aria-label={SITE.title}>
+      <span class="tilde">~</span>{SITE.title}
+      <span class="cursor" aria-hidden="true"></span>
+    </a>
+    <span class="mast-rule" aria-hidden="true"></span>
+    <span class="mast-tag">{SITE.tagline}</span>
+    <span class="mast-date">{today}</span>
+  </div>
+
+  <div class="wrap navbar">
+    <nav class="nav" aria-label="主导航">
+      {
+        SITE.nav.map((item) => (
+          <a href={item.href} aria-current={isActive(item.href) ? 'page' : undefined}>
+            {item.label}
+          </a>
+        ))
+      }
+    </nav>
+    <a class="nav-extra" href="/search/" aria-current={path.startsWith('/search') ? 'page' : undefined}>
+      搜索
+    </a>
+  </div>
+</header>

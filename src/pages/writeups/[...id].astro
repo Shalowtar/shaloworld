@@ -1,0 +1,343 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getCollection, render } from 'astro:content';
+import { SITE } from '../../consts';
+import {
+  visiblePosts,
+  formatDate,
+  formatDateCN,
+  readingTime,
+  relatedPosts,
+} from '../../utils/posts';
+
+export async function getStaticPaths() {
+  const posts = await getCollection('writeups');
+  return posts
+    .filter((p) => !p.data.draft)
+    .map((post) => ({ params: { id: post.id }, props: { post } }));
+}
+
+const { post } = Astro.props;
+const { Content, headings } = await render(post);
+const { data } = post;
+
+const all = visiblePosts(await getCollection('writeups'));
+const index = all.findIndex((p) => p.id === post.id);
+const prev = index > 0 ? all[index - 1] : null;
+const next = index >= 0 && index < all.length - 1 ? all[index + 1] : null;
+const related = relatedPosts(post, all, 3);
+
+const toc = headings.filter((h) => h.depth === 2 || h.depth === 3);
+const minutes = readingTime(post.body);
+const description = data.summary;
+
+const siteUrl = Astro.site ?? new URL(SITE.url);
+const canonical = new URL(Astro.url.pathname, siteUrl).href;
+
+/** 文章级结构化数据：搜索引擎与分享卡片能读到标题、日期、分类、标签 */
+const articleSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'BlogPosting',
+  headline: data.title,
+  description: data.summary,
+  url: canonical,
+  mainEntityOfPage: canonical,
+  datePublished: data.publishedAt.toISOString(),
+  dateModified: (data.updatedAt ?? data.publishedAt).toISOString(),
+  inLanguage: 'zh-CN',
+  articleSection: data.category,
+  keywords: data.tags.join(', '),
+  author: { '@type': 'Person', name: SITE.author, url: SITE.github },
+  publisher: { '@type': 'Organization', name: SITE.title, url: siteUrl.href },
+};
+---
+
+<BaseLayout title={data.title} description={description} type="article" publishedAt={data.publishedAt}>
+  <script slot="head" type="application/ld+json" set:html={JSON.stringify(articleSchema)} />
+  <div class="reading-progress" id="reading-progress" aria-hidden="true"></div>
+  <div class="wrap">
+    <section class="article-top">
+      <p class="breadcrumb">
+        <a href="/">~</a><span class="sep">/</span>
+        <a href="/writeups/">writeups</a><span class="sep">/</span>
+        {data.event && <><span>{data.event}</span><span class="sep">/</span></>}
+        <span>{data.category}</span>
+      </p>
+
+      <div class="article-badges">
+        <span class="badge" data-cat={data.category}>{data.category}</span>
+        <span class="badge" data-diff={data.difficulty}>{data.difficulty}</span>
+        {data.event && <span class="badge">{data.event}</span>}
+      </div>
+
+      <h1>{data.title}</h1>
+
+      <p class="standfirst">{data.summary}</p>
+
+      <div class="article-meta">
+        <span>发布于 {formatDate(data.publishedAt)}</span>
+        {data.updatedAt && <span>更新 {formatDate(data.updatedAt)}</span>}
+        <span>{minutes} min 阅读</span>
+        {data.solveTime && <span>解题 {data.solveTime}</span>}
+        {data.tools.length > 0 && <span>工具 {data.tools.join(' / ')}</span>}
+        <button class="share-btn" id="share-btn" type="button">复制链接</button>
+      </div>
+    </section>
+
+    <div class="article-grid">
+      <article class="prose" id="article">
+        <Content />
+
+        {
+          data.attachments.length > 0 && (
+            <div class="attachments">
+              <div class="attachments-head">附件 / attachments</div>
+              <ul>
+                {data.attachments.map((a) => (
+                  <li>
+                    {a.href ? <a href={a.href} download>{a.name}</a> : <span>{a.name}</span>}
+                    {a.size && <span class="size">{a.size}</span>}
+                    {a.sha256 && <span class="hash">sha256:{a.sha256.slice(0, 10)}…</span>}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )
+        }
+      </article>
+
+      {
+        toc.length > 0 && (
+          <aside class="toc" id="toc" aria-label="目录">
+            <div class="toc-title">目 录</div>
+            <ul>
+              {toc.map((h) => (
+                <li class={h.depth === 3 ? 'lvl3' : ''}>
+                  <a href={`#${h.slug}`}>{h.text}</a>
+                </li>
+              ))}
+            </ul>
+          </aside>
+        )
+      }
+    </div>
+
+    {
+      (prev || next) && (
+        <nav class="pager" aria-label="上下篇">
+          {next ? (
+            <a href={`/writeups/${next.id}/`}>
+              <span class="k">← 更早</span>
+              <span class="t">{next.data.title}</span>
+            </a>
+          ) : (
+            <span />
+          )}
+          {prev ? (
+            <a class="next" href={`/writeups/${prev.id}/`}>
+              <span class="k">更新 →</span>
+              <span class="t">{prev.data.title}</span>
+            </a>
+          ) : (
+            <span />
+          )}
+        </nav>
+      )
+    }
+
+    {
+      related.length > 0 && (
+        <section class="section">
+          <div class="section-head">
+            <h2>相关 Writeup</h2>
+          </div>
+          <div class="post-list">
+            {related.map((p) => (
+              <a class="card" href={`/writeups/${p.id}/`}>
+                <div class="card-top">
+                  <span class="badge" data-cat={p.data.category}>
+                    {p.data.category}
+                  </span>
+                  {p.data.event && <span class="badge">{p.data.event}</span>}
+                </div>
+                <h3>{p.data.title}</h3>
+              </a>
+            ))}
+          </div>
+        </section>
+      )
+    }
+
+    <p class="search-hint" style="margin:34px 0 0">
+      最后更新：{formatDateCN(data.updatedAt ?? data.publishedAt)} · 内容仅供学习交流
+    </p>
+  </div>
+</BaseLayout>
+
+<script is:inline>
+  (function () {
+    const article = document.getElementById('article');
+    if (!article) return;
+
+    /* ---------- 代码块复制 ---------- */
+    article.querySelectorAll('pre').forEach(function (pre) {
+      if (pre.closest('.flag-box')) return;
+      const btn = document.createElement('button');
+      btn.className = 'copy-btn';
+      btn.type = 'button';
+      btn.textContent = 'copy';
+      btn.addEventListener('click', function () {
+        const code = pre.querySelector('code');
+        const text = code ? code.textContent || '' : pre.textContent || '';
+        const done = function () {
+          btn.textContent = 'copied';
+          setTimeout(function () {
+            btn.textContent = 'copy';
+          }, 1400);
+        };
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text).then(done).catch(fallback);
+        } else {
+          fallback();
+        }
+        function fallback() {
+          const ta = document.createElement('textarea');
+          ta.value = text;
+          ta.style.position = 'fixed';
+          ta.style.opacity = '0';
+          document.body.appendChild(ta);
+          ta.select();
+          try {
+            document.execCommand('copy');
+            done();
+          } catch (e) {}
+          document.body.removeChild(ta);
+        }
+      });
+      pre.appendChild(btn);
+    });
+
+    /* ---------- Flag 折叠 ---------- */
+    article.querySelectorAll('.flag-box').forEach(function (box) {
+      const value = box.dataset.flag || '';
+      const code = box.querySelector('.flag-value');
+      const toggle = box.querySelector('[data-act="toggle"]');
+      const copy = box.querySelector('[data-act="copy"]');
+
+      function setRevealed(on) {
+        code.textContent = on ? value : '•'.repeat(Math.min(Math.max(value.length, 8), 24));
+        code.dataset.revealed = on ? 'true' : 'false';
+        toggle.textContent = on ? '隐藏' : '显示';
+      }
+
+      if (toggle) {
+        toggle.addEventListener('click', function () {
+          setRevealed(code.dataset.revealed !== 'true');
+        });
+      }
+      if (copy) {
+        copy.addEventListener('click', function () {
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(value).then(function () {
+              copy.textContent = '已复制';
+              setTimeout(function () {
+                copy.textContent = '复制';
+              }, 1400);
+            });
+          }
+        });
+      }
+    });
+
+    /* ---------- 图片灯箱 ---------- */
+    const lightbox = document.createElement('div');
+    lightbox.className = 'lightbox';
+    const bigImg = document.createElement('img');
+    lightbox.appendChild(bigImg);
+    lightbox.addEventListener('click', function () {
+      lightbox.classList.remove('is-open');
+    });
+    document.body.appendChild(lightbox);
+
+    article.querySelectorAll('img').forEach(function (img) {
+      img.addEventListener('click', function () {
+        bigImg.src = img.src;
+        lightbox.classList.add('is-open');
+      });
+    });
+
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') lightbox.classList.remove('is-open');
+    });
+
+    /* ---------- 阅读进度条 ---------- */
+    const bar = document.getElementById('reading-progress');
+    if (bar) {
+      const update = function () {
+        const el = document.documentElement;
+        const max = el.scrollHeight - el.clientHeight;
+        bar.style.width = (max > 0 ? (el.scrollTop / max) * 100 : 0) + '%';
+      };
+      window.addEventListener('scroll', update, { passive: true });
+      window.addEventListener('resize', update);
+      update();
+    }
+
+    /* ---------- 复制本文链接 ---------- */
+    const share = document.getElementById('share-btn');
+    if (share) {
+      share.addEventListener('click', function () {
+        const url = location.href.split('?')[0].split('#')[0];
+        function done() {
+          share.textContent = '已复制';
+          setTimeout(function () {
+            share.textContent = '复制链接';
+          }, 1400);
+        }
+        function fallback() {
+          const ta = document.createElement('textarea');
+          ta.value = url;
+          ta.style.position = 'fixed';
+          ta.style.opacity = '0';
+          document.body.appendChild(ta);
+          ta.select();
+          try {
+            document.execCommand('copy');
+            done();
+          } catch (e) {}
+          document.body.removeChild(ta);
+        }
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(url).then(done).catch(fallback);
+        } else {
+          fallback();
+        }
+      });
+    }
+
+    /* ---------- 目录滚动高亮 ---------- */
+    const tocLinks = Array.from(document.querySelectorAll('#toc a'));
+    if (!tocLinks.length) return;
+
+    const targets = tocLinks
+      .map(function (a) {
+        const el = document.querySelector(a.getAttribute('href'));
+        return el ? { link: a, el: el } : null;
+      })
+      .filter(Boolean);
+
+    function onScroll() {
+      let current = targets[0];
+      targets.forEach(function (t) {
+        if (t.el.getBoundingClientRect().top <= 130) current = t;
+      });
+      tocLinks.forEach(function (a) {
+        a.classList.remove('active');
+      });
+      if (current) current.link.classList.add('active');
+    }
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  })();
+</script>

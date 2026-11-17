@@ -1,0 +1,168 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { getCollection } from 'astro:content';
+import { visiblePosts, formatDate } from '../utils/posts';
+
+const all = visiblePosts(await getCollection('writeups'));
+
+const index = all.map((p) => ({
+  title: p.data.title,
+  summary: p.data.summary,
+  url: `/writeups/${p.id}/`,
+  cat: p.data.category,
+  event: p.data.event ?? '',
+  tags: p.data.tags,
+  date: formatDate(p.data.publishedAt),
+  body: (p.body ?? '').replace(/\s+/g, ' ').slice(0, 4000),
+}));
+
+const indexJson = JSON.stringify(index).replace(/</g, '\\u003c');
+---
+
+<BaseLayout title="搜索" description="全文搜索站内 Writeup。">
+  <div class="wrap">
+    <section class="article-top">
+      <p class="breadcrumb">
+        <a href="/">~</a><span class="sep">/</span><span>search</span>
+      </p>
+      <h1>搜索</h1>
+      <div class="article-meta"><span>索引 {all.length} 篇</span></div>
+    </section>
+
+    <div class="search-box">
+      <input
+        class="search-input"
+        id="q"
+        type="search"
+        placeholder="grep -r &quot;关键字&quot; ./writeups"
+        autocomplete="off"
+        spellcheck="false"
+        aria-label="搜索关键词"
+      />
+    </div>
+    <p class="search-hint" id="hint">
+      输入关键词，空格分隔多个词；匹配标题、摘要、标签与正文。任意页面按 <kbd>/</kbd> 或 <kbd>Ctrl K</kbd> 可直接回到这里。
+    </p>
+    <div class="results" id="results"></div>
+  </div>
+</BaseLayout>
+
+<script is:inline define:vars={{ indexJson }}>
+  (function () {
+    const posts = JSON.parse(indexJson);
+    const input = document.getElementById('q');
+    const results = document.getElementById('results');
+    const hint = document.getElementById('hint');
+    if (!input || !results) return;
+
+    function escapeHtml(s) {
+      return String(s)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    function search(raw) {
+      const terms = raw.toLowerCase().split(/\s+/).filter(Boolean);
+      if (!terms.length) return [];
+
+      return posts
+        .map(function (p) {
+          const haystacks = {
+            title: p.title.toLowerCase(),
+            summary: p.summary.toLowerCase(),
+            tags: (p.tags || []).join(' ').toLowerCase(),
+            body: (p.body || '').toLowerCase(),
+            event: (p.event || '').toLowerCase(),
+          };
+          let score = 0;
+          let allMatched = true;
+          terms.forEach(function (t) {
+            let hit = 0;
+            if (haystacks.title.includes(t)) hit += 12;
+            if (haystacks.tags.includes(t)) hit += 8;
+            if (haystacks.event.includes(t)) hit += 5;
+            if (haystacks.summary.includes(t)) hit += 4;
+            if (haystacks.body.includes(t)) hit += 2;
+            if (hit === 0) allMatched = false;
+            score += hit;
+          });
+          return allMatched ? { p: p, score: score } : null;
+        })
+        .filter(Boolean)
+        .sort(function (a, b) {
+          return b.score - a.score;
+        });
+    }
+
+    function render(list, raw) {
+      if (!raw.trim()) {
+        results.innerHTML = '';
+        hint.textContent = '输入关键词，空格分隔多个词；匹配标题、摘要、标签与正文。';
+        return;
+      }
+      if (!list.length) {
+        results.innerHTML = '<div class="empty">0 results — 没有匹配的文章</div>';
+        hint.textContent = '0 条结果';
+        return;
+      }
+      hint.textContent = list.length + ' 条结果，按相关度排序';
+      results.innerHTML = list
+        .map(function (r) {
+          const p = r.p;
+          return (
+            '<a class="card" href="' +
+            p.url +
+            '">' +
+            '<div class="card-top">' +
+            '<span class="badge" data-cat="' +
+            p.cat +
+            '">' +
+            p.cat +
+            '</span>' +
+            (p.event ? '<span class="badge">' + escapeHtml(p.event) + '</span>' : '') +
+            '</div>' +
+            '<h3>' +
+            escapeHtml(p.title) +
+            '</h3>' +
+            '<p>' +
+            escapeHtml(p.summary) +
+            '</p>' +
+            '<div class="card-meta"><span>' +
+            p.date +
+            '</span>' +
+            (p.tags || [])
+              .slice(0, 3)
+              .map(function (t) {
+                return '<span class="tag">' + escapeHtml(t) + '</span>';
+              })
+              .join('') +
+            '</div></a>'
+          );
+        })
+        .join('');
+    }
+
+    let timer = null;
+    input.addEventListener('input', function () {
+      clearTimeout(timer);
+      timer = setTimeout(function () {
+        const raw = input.value;
+        render(search(raw), raw);
+      }, 120);
+    });
+
+    document.addEventListener('keydown', function (e) {
+      if (e.key === '/' && document.activeElement !== input) {
+        e.preventDefault();
+        input.focus();
+      }
+    });
+
+    // 从任意页面按 / 或 Ctrl K 跳来时，直接聚焦输入框
+    if (new URLSearchParams(location.search).has('focus')) {
+      input.focus();
+    }
+  })();
+</script>
