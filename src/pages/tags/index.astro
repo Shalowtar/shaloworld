@@ -2,31 +2,61 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { getCollection } from 'astro:content';
 import { visiblePosts, tagCounts } from '../../utils/posts';
+import { CATEGORIES } from '../../consts';
 
 const all = visiblePosts(await getCollection('writeups'));
 const tags = tagCounts(all);
+const cats = CATEGORIES.map((c) => ({
+  name: c,
+  count: all.filter((p) => p.data.category === c).length,
+})).filter((c) => c.count > 0);
 ---
 
-<BaseLayout title="标签" description="按标签浏览全部 Writeup。">
+<BaseLayout title="标签与分类" description="按标签或分类浏览全部 Writeup。">
   <div class="wrap">
     <section class="article-top">
       <p class="breadcrumb">
         <a href="/">~</a><span class="sep">/</span><span>tags</span>
       </p>
-      <h1>标签</h1>
-      <div class="article-meta"><span>{tags.length} 个标签</span></div>
+      <h1>标签与分类</h1>
+      <div class="article-meta">
+        <span>{tags.length} 个标签</span>
+        <span>{cats.length} 个分类</span>
+      </div>
     </section>
 
     {
+      cats.length > 0 && (
+        <>
+          <h2 class="index-head">分类</h2>
+          <div class="tag-cloud">
+            {cats.map((c) => (
+              <a href={`/writeups/?cat=${encodeURIComponent(c.name)}`}>
+                {c.name}
+                <span class="n">{c.count}</span>
+              </a>
+            ))}
+          </div>
+        </>
+      )
+    }
+
+    {
       tags.length > 0 && (
-        <div class="tag-cloud">
-          {tags.map((t) => (
-            <a href={`/tags/${encodeURIComponent(t.tag)}/`}>
-              #{t.tag}
-              <span class="n">{t.count}</span>
-            </a>
-          ))}
-        </div>
+        <>
+          <h2 class="index-head">标签</h2>
+          <div class="tag-cloud">
+            {tags.map((t) => (
+              <a
+                href={`/tags/${encodeURIComponent(t.tag)}/`}
+                style={`font-size:${Math.min(1.15, 0.8 + t.count * 0.05)}rem`}
+              >
+                #{t.tag}
+                <span class="n">{t.count}</span>
+              </a>
+            ))}
+          </div>
+        </>
       )
     }
   </div>

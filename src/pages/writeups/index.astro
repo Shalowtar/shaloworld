@@ -72,6 +72,8 @@ const counts = CATEGORIES.map((c) => ({
         b.setAttribute('aria-pressed', b.dataset.filter === filter ? 'true' : 'false');
       });
       if (counter) counter.textContent = '> 匹配 ' + shown + ' 篇';
+      const url = filter === 'all' ? location.pathname : location.pathname + '?cat=' + encodeURIComponent(filter);
+      history.replaceState(null, '', url);
     }
 
     buttons.forEach(function (b) {
@@ -80,6 +82,10 @@ const counts = CATEGORIES.map((c) => ({
       });
     });
 
-    apply('all');
+    const preset = new URLSearchParams(location.search).get('cat');
+    const known = Array.prototype.some.call(buttons, function (b) {
+      return b.dataset.filter === preset;
+    });
+    apply(known ? preset : 'all');
   })();
 </script>

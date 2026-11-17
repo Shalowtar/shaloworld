@@ -5,16 +5,45 @@ import { visiblePosts, formatDate } from '../utils/posts';
 
 const all = visiblePosts(await getCollection('writeups'));
 
-const byYear = new Map<number, typeof all>();
+const MONTHS = [
+  '一月',
+  '二月',
+  '三月',
+  '四月',
+  '五月',
+  '六月',
+  '七月',
+  '八月',
+  '九月',
+  '十月',
+  '十一月',
+  '十二月',
+];
+
+/** 年份 → 月份 → 文章，全部按时间倒序 */
+const byYear = new Map<number, Map<number, typeof all>>();
 for (const post of all) {
-  const y = post.data.publishedAt.getFullYear();
-  if (!byYear.has(y)) byYear.set(y, []);
-  byYear.get(y)!.push(post);
+  const d = post.data.publishedAt;
+  const y = d.getFullYear();
+  const m = d.getMonth();
+  if (!byYear.has(y)) byYear.set(y, new Map());
+  const months = byYear.get(y)!;
+  if (!months.has(m)) months.set(m, []);
+  months.get(m)!.push(post);
 }
-const years = [...byYear.entries()].sort((a, b) => b[0] - a[0]);
+
+const years = [...byYear.entries()]
+  .sort((a, b) => b[0] - a[0])
+  .map(([year, months]) => ({
+    year,
+    total: [...months.values()].reduce((n, list) => n + list.length, 0),
+    months: [...months.entries()]
+      .sort((a, b) => b[0] - a[0])
+      .map(([month, posts]) => ({ month, posts })),
+  }));
 ---
 
-<BaseLayout title="归档" description="按年份浏览全部文章。">
+<BaseLayout title="归档" description="按年份与月份浏览全部文章。">
   <div class="wrap">
     <section class="article-top">
       <p class="breadcrumb">
@@ -24,27 +53,39 @@ const years = [...byYear.entries()].sort((a, b) => b[0] - a[0]);
       <div class="article-meta">
         <span>共 {all.length} 篇</span>
         <span>{years.length} 个年份</span>
+        <span>按时间倒序</span>
       </div>
     </section>
 
     {
       years.length > 0 &&
-        years.map(([year, posts]) => (
+        years.map((group) => (
           <div class="year-group">
-            <div class="year-title">{year}</div>
-            <ul class="year-list">
-              {posts.map((post) => (
-                <li>
-                  <time datetime={post.data.publishedAt.toISOString()}>
-                    {formatDate(post.data.publishedAt)}
-                  </time>
-                  <span class="badge" data-cat={post.data.category}>
-                    {post.data.category}
-                  </span>
-                  <a href={`/writeups/${post.id}/`}>{post.data.title}</a>
-                </li>
-              ))}
-            </ul>
+            <div class="year-title">
+              {group.year}
+              <span class="year-count">{group.total} 篇</span>
+            </div>
+            {group.months.map((m) => (
+              <>
+                <div class="month-label">
+                  {MONTHS[m.month]}
+                  <span class="year-count">{m.posts.length}</span>
+                </div>
+                <ul class="year-list">
+                  {m.posts.map((post) => (
+                    <li>
+                      <time datetime={post.data.publishedAt.toISOString()}>
+                        {formatDate(post.data.publishedAt)}
+                      </time>
+                      <span class="badge" data-cat={post.data.category}>
+                        {post.data.category}
+                      </span>
+                      <a href={`/writeups/${post.id}/`}>{post.data.title}</a>
+                    </li>
+                  ))}
+                </ul>
+              </>
+            ))}
           </div>
         ))
     }
