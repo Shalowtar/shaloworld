@@ -5,8 +5,6 @@ category: Reverse
 publishedAt: 2026-11-17
 tags:
   - 逆向
-  - 汇编
-  - GDPTCTF
 tools:
   - IDA
 attachments:
