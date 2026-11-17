@@ -17,14 +17,12 @@ const events = new Set(all.map((p) => p.data.event).filter(Boolean));
 
 <BaseLayout description={SITE.description}>
   <section class="hero wrap">
-    <p class="kicker">Reverse Engineering · Pwn · CTF Writeup</p>
-    <h1>{SITE.title}<em>逆向笔记</em></h1>
+    <p class="kicker">Reverse Engineering · CTF Writeup</p>
+    <h1>{SITE.title}</h1>
     <p class="lead">{SITE.description}</p>
     <div class="hero-tags">
       <span class="badge" data-cat="Reverse">逆向</span>
-      <span class="badge" data-cat="Pwn">Pwn</span>
-      <span class="badge" data-cat="Crypto">Crypto</span>
-      <span class="badge">工具笔记</span>
+      <span class="badge">CTF</span>
     </div>
     <div class="hero-actions">
       <a class="btn btn-primary" href="/writeups/">开始阅读</a>

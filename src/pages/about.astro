@@ -8,7 +8,7 @@ const hasResume = fs.existsSync('public/resume.pdf');
 const timeline = [
   { time: '2026.09', title: '入门 CTF', text: '从 misc 和 web 起步，转向逆向方向系统学习。' },
   { time: '2026.10', title: '第一次参赛', text: 'ISCTF 2026，主攻 Reverse，写出第一批 writeup。' },
-  { time: '2026.11', title: '搭建这个站点', text: '用 Astro 把题目记录、工具笔记沉淀成可检索的库。' },
+  { time: '2026.11', title: '搭建这个站点', text: '用 Astro 把题目记录与解题思路沉淀成可检索的库。' },
 ];
 ---
 
@@ -45,8 +45,7 @@ const timeline = [
             常见混淆与反调试对抗，以及把分析过程写成可复现的脚本。
           </p>
           <p>
-            同时在补 <strong>Pwn</strong> 基础：栈溢出、ROP、堆入门，用 pwntools 写 exp。
-            Crypto 与 Misc 作为比赛里的补位，遇到有意思的题也会记一笔。
+            同时在补汇编、调试器与 Linux 环境的基础，保证每一步分析都能复现成脚本。
           </p>
         </div>
       </section>
