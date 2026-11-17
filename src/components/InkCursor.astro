@@ -46,6 +46,9 @@
     var hoverPoints = [];
     var hoverPointsSig = '';
     var hoverLen = 1;
+    var hoverStart = 0; // 起笔位置（沿描边的弧长，取离指针最近处）
+    var pointerX = 0;
+    var pointerY = 0;
     var hoverDir = 1;
     var hoverSince = 0;
     var hoverLeaveAt = 0;
@@ -261,13 +264,6 @@
       return pts;
     }
 
-    /** 围框的浓淡：出现时淡入，离开后淡出 */
-    function hoverLevel(now) {
-      if (!hoverRect) return 0;
-      if (hoverLeaveAt) return clamp(1 - (now - hoverLeaveAt) / 340, 0, 1);
-      return clamp((now - hoverSince) / 240, 0, 1);
-    }
-
     /** 沿采样点累加周长，用来把“每秒多少像素”换算成绕圈位置 */
     function perimeterLen(list) {
       var s = 0;
@@ -279,27 +275,57 @@
       return s || 1;
     }
 
+    /** 找到离指针最近的那一点，换算成沿描边的弧长，作为墨迹的起点 */
+    function nearestArc(list, L, x, y) {
+      var best = 0;
+      var bestD = Infinity;
+      for (var i = 0; i < list.length; i += 1) {
+        var dx = list[i][0] - x;
+        var dy = list[i][1] - y;
+        var d = dx * dx + dy * dy;
+        if (d < bestD) {
+          bestD = d;
+          best = i;
+        }
+      }
+      return (best / Math.max(1, list.length - 1)) * L;
+    }
+
     /**
-     * 悬停：一笔墨沿着目标描边流过去 —— 头部最浓、后面拖着渐淡渐细的墨尾，
-     * 每 3px 叠一个墨点，所以是连贯的一笔而不是一颗颗珠子；
-     * 速度按“每秒走多少像素”算，大框小框拖得一样快（方向随机）。
+     * 悬停：一笔墨从离指针最近的位置起笔，沿描边流过去（方向随机）——
+     * 头部最浓、后面拖着渐淡渐细的墨尾，每 2.5px 叠一个墨点，所以是连贯的一笔；
+     * 速度按“每秒走多少像素”算，大框小框拖得一样快。
+     * 指针离开后，墨点向外散开并淡去，像墨迹在纸上化掉。
      */
     function drawHover(now) {
       rctx.clearRect(0, 0, W, H);
+      if (!hoverRect || !hoverPoints.length) return;
 
-      var level = hoverLevel(now);
-      if (!hoverRect || level < 0.02 || !hoverPoints.length) return;
+      // 进场：240ms 淡入
+      var enter = hoverLeaveAt ? 1 : clamp((now - hoverSince) / 240, 0, 1);
+
+      // 离场：620ms 内向外散开并淡掉
+      var fade = 1;
+      var spread = 0;
+      if (hoverLeaveAt) {
+        var p = clamp((now - hoverLeaveAt) / 720, 0, 1);
+        fade = 1 - p;
+        spread = p * 16;
+      }
+      var level = enter * fade;
+      if (level < 0.02) return;
 
       var len = hoverPoints.length;
       var L = hoverLen;
       var t = (hoverLeaveAt || now) - hoverSince;
-      var travelled = (t / 1000) * RING_SPEED; // 已经走过的像素
-      if (hoverDir < 0) travelled = -travelled;
+      var travelled = hoverStart + hoverDir * (t / 1000) * RING_SPEED;
       travelled = ((travelled % L) + L) % L;
 
       var TAIL = L * 0.9; // 墨尾绕满几乎整圈，只在墨头前方留一小段空当
       var STEP_D = 2.5;
       var count = Math.max(2, Math.round(TAIL / STEP_D));
+      var cx = hoverRect.left + hoverRect.width / 2;
+      var cy = hoverRect.top + hoverRect.height / 2;
 
       for (var i = 0; i <= count; i += 1) {
         var d = i * STEP_D;
@@ -312,19 +338,39 @@
         var idx = Math.min(len - 1, Math.floor((pos / L) * len));
         var pt = hoverPoints[idx];
 
-        var hw = 3.5 * (0.55 + 0.45 * k);
+        var px = pt[0];
+        var py = pt[1];
+        if (spread) {
+          // 由框心朝外推开：散开时墨点向外飘、同时变大变淡
+          var ox = px - cx;
+          var oy = py - cy;
+          var od = Math.sqrt(ox * ox + oy * oy) || 1;
+          px += (ox / od) * spread;
+          py += (oy / od) * spread;
+        }
+
+        var hw = 3.5 * (0.55 + 0.45 * k) + spread * 0.22;
         var r = hw * 2.6;
 
         rctx.globalAlpha = clamp(level * 0.22 * k, 0, 1);
-        rctx.drawImage(ringDab, pt[0] - r, pt[1] - r, r * 2, r * 2);
+        rctx.drawImage(ringDab, px - r, py - r, r * 2, r * 2);
       }
 
       // 头部一小团更浓的湿墨，让“笔锋”落在纸上有个实点
       var hi = Math.min(len - 1, Math.floor((travelled / L) * len));
       var hp = hoverPoints[hi];
-      var hr = 9.5;
+      var hx = hp[0];
+      var hy = hp[1];
+      if (spread) {
+        var hox = hx - cx;
+        var hoy = hy - cy;
+        var hod = Math.sqrt(hox * hox + hoy * hoy) || 1;
+        hx += (hox / hod) * spread;
+        hy += (hoy / hod) * spread;
+      }
+      var hr = 9.5 + spread * 0.3;
       rctx.globalAlpha = clamp(level * 0.2, 0, 1);
-      rctx.drawImage(ringDab, hp[0] - hr, hp[1] - hr, hr * 2, hr * 2);
+      rctx.drawImage(ringDab, hx - hr, hy - hr, hr * 2, hr * 2);
 
       rctx.globalAlpha = 1;
     }
@@ -332,8 +378,8 @@
     function frame() {
       var now = performance.now();
 
-      // 围框淡出结束后清掉
-      if (hoverRect && hoverLeaveAt && now - hoverLeaveAt > 360) {
+      // 围框散开淡尽后清掉
+      if (hoverRect && hoverLeaveAt && now - hoverLeaveAt > 760) {
         hoverRect = null;
         hoverLeaveAt = 0;
       }
@@ -392,6 +438,8 @@
         hoverDir = Math.random() < 0.5 ? 1 : -1; // 顺时针或逆时针随机
         hoverPoints = roundRectPoints(hoverRect, 4);
         hoverLen = perimeterLen(hoverPoints);
+        // 从鼠标靠得最近的那一点起笔
+        hoverStart = nearestArc(hoverPoints, hoverLen, pointerX, pointerY);
         hoverPointsSig = sig;
       } else {
         hoverLeaveAt = 0;
@@ -411,6 +459,8 @@
         var now = performance.now();
 
         if (x >= 0 && y >= 0 && x <= W && y <= H) inkTo(x, y, now);
+        pointerX = x;
+        pointerY = y;
 
         placeRest(x, y);
         restWake();
