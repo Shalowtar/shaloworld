@@ -3,6 +3,7 @@ import { SITE } from '../consts';
 import '../styles/global.css';
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
+import InkCursor from '../components/InkCursor.astro';
 
 interface Props {
   title?: string;
@@ -69,6 +70,7 @@ const siteSchema = {
       <slot />
     </main>
     <Footer />
+    <InkCursor />
 
     <script is:inline>
       // Ctrl/Cmd+K 或 / 直接跳到搜索页，省一次鼠标

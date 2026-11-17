@@ -1,0 +1,78 @@
+<div class="ink-cursor" aria-hidden="true">
+  <span class="ink-dot"></span>
+  <span class="ink-ring"></span>
+</div>
+
+<script is:inline>
+  (function () {
+    var fine = window.matchMedia('(pointer: fine)').matches;
+    var calm = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (!fine || calm) return;
+
+    var root = document.querySelector('.ink-cursor');
+    if (!root) return;
+    var dot = root.querySelector('.ink-dot');
+    var ring = root.querySelector('.ink-ring');
+
+    var x = -200;
+    var y = -200;
+    var rx = -200;
+    var ry = -200;
+    var visible = false;
+    var idle = null;
+
+    function place(el, px, py) {
+      el.style.transform = 'translate3d(' + px + 'px,' + py + 'px,0)';
+    }
+
+    function interactive(target) {
+      if (!target || !target.closest) return false;
+      return !!target.closest('a, button, input, select, textarea, .chip, .flag-btn, .lightbox');
+    }
+
+    window.addEventListener(
+      'mousemove',
+      function (e) {
+        if (e.target && e.target.tagName === 'IFRAME') {
+          root.classList.remove('is-on');
+          visible = false;
+          return;
+        }
+        x = e.clientX;
+        y = e.clientY;
+        if (!visible) {
+          visible = true;
+          rx = x;
+          ry = y;
+          root.classList.add('is-on');
+        }
+        place(dot, x, y);
+        root.classList.toggle('is-hover', interactive(e.target));
+        clearTimeout(idle);
+        idle = setTimeout(function () {
+          root.classList.remove('is-on');
+          visible = false;
+        }, 1800);
+      },
+      { passive: true }
+    );
+
+    window.addEventListener('mousedown', function () {
+      root.classList.add('is-down');
+    });
+    window.addEventListener('mouseup', function () {
+      root.classList.remove('is-down');
+    });
+    document.addEventListener('mouseleave', function () {
+      root.classList.remove('is-on');
+      visible = false;
+    });
+
+    (function tick() {
+      rx += (x - rx) * 0.16;
+      ry += (y - ry) * 0.16;
+      place(ring, rx, ry);
+      requestAnimationFrame(tick);
+    })();
+  })();
+</script>
