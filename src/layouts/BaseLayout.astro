@@ -59,6 +59,15 @@ const siteSchema = {
     <link rel="alternate" type="application/rss+xml" title={`${SITE.title} RSS`} href="/rss.xml" />
     <link rel="icon" href="/icon.svg" type="image/svg+xml" />
     <!-- 标题用行楷（霞鹜文楷，OFL 开源，自托管分片按需加载） -->
+    <!-- 站内实际只用 110、113–119 这几片，提前预加载，避免换页时标题先正楷再跳行楷 -->
+    <link rel="preload" as="font" type="font/woff2" crossorigin href="/fonts/wenkai/files/lxgwwenkai-regular-subset-110.woff2" />
+    <link rel="preload" as="font" type="font/woff2" crossorigin href="/fonts/wenkai/files/lxgwwenkai-regular-subset-113.woff2" />
+    <link rel="preload" as="font" type="font/woff2" crossorigin href="/fonts/wenkai/files/lxgwwenkai-regular-subset-114.woff2" />
+    <link rel="preload" as="font" type="font/woff2" crossorigin href="/fonts/wenkai/files/lxgwwenkai-regular-subset-115.woff2" />
+    <link rel="preload" as="font" type="font/woff2" crossorigin href="/fonts/wenkai/files/lxgwwenkai-regular-subset-116.woff2" />
+    <link rel="preload" as="font" type="font/woff2" crossorigin href="/fonts/wenkai/files/lxgwwenkai-regular-subset-117.woff2" />
+    <link rel="preload" as="font" type="font/woff2" crossorigin href="/fonts/wenkai/files/lxgwwenkai-regular-subset-118.woff2" />
+    <link rel="preload" as="font" type="font/woff2" crossorigin href="/fonts/wenkai/files/lxgwwenkai-regular-subset-119.woff2" />
     <link rel="stylesheet" href="/fonts/wenkai/lxgwwenkai-regular.css" />
 
     <script type="application/ld+json" set:html={JSON.stringify(siteSchema)} />

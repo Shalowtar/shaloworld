@@ -12,8 +12,9 @@
     if (!ctx) return;
 
     var INK = '148, 55, 38'; // 朱砂，与之前粒子同色
-    var LIFE = 860; // 墨迹存活时长（毫秒）
-    var MAX_POINTS = 90;
+    var LIFE = 900; // 墨迹存活时长（毫秒）
+    var MAX_POINTS = 220;
+    var SEG_STEP = 6; // 补点间距，越小笔迹越顺
 
     var dpr = Math.min(window.devicePixelRatio || 1, 1.5);
     var W = 0;
@@ -62,8 +63,8 @@
         var k = Math.pow(1 - age, 1.5); // 头部浓、尾部淡
         if (k <= 0.02) continue;
 
-        var seg = Math.sqrt((p1.x - p0.x) * (p1.x - p0.x) + (p1.y - p0.y) * (p1.y - p0.y));
-        var thin = clamp(1.15 - seg / 90, 0.55, 1.15); // 快挥更细，慢拖更粗
+        // 宽度只跟随平滑后的速度，避免相邻线段粗细跳变留下珠状断点
+        var thin = clamp(1.18 - p1.v * 0.55, 0.62, 1.12);
 
         // 洇开的淡边
         ctx.strokeStyle = 'rgba(' + INK + ',' + 0.075 * k + ')';
@@ -272,11 +273,35 @@
         var now = performance.now();
 
         var last = pts[pts.length - 1];
-        if (!last || Math.abs(x - last.x) + Math.abs(y - last.y) > 1.5) {
-          pts.push({ x: x, y: y, t: now });
-          if (pts.length > MAX_POINTS) pts.shift();
+        if (!last) {
+          pts.push({ x: x, y: y, t: now, v: 0.2 });
         } else {
-          last.t = now;
+          var mx = x - last.x;
+          var my = y - last.y;
+          var dist = Math.sqrt(mx * mx + my * my);
+          var dt = Math.max(1, now - last.t);
+          // 速度做平滑，避免线段宽度忽粗忽细
+          var speed = last.v * 0.6 + (dist / dt) * 0.4;
+
+          if (dist > SEG_STEP) {
+            // 指针快速甩动时两次事件之间距离很大，这里补插中间点，笔迹才不会断成一段段
+            var n = Math.min(48, Math.ceil(dist / SEG_STEP));
+            for (var s = 1; s <= n; s += 1) {
+              var f = s / n;
+              pts.push({
+                x: last.x + mx * f,
+                y: last.y + my * f,
+                t: last.t + dt * f,
+                v: speed,
+              });
+            }
+          } else if (dist > 2) {
+            pts.push({ x: x, y: y, t: now, v: speed });
+          } else {
+            last.t = now;
+            last.v = speed;
+          }
+          while (pts.length > MAX_POINTS) pts.shift();
         }
 
         headX = x;
