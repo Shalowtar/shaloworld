@@ -1,18 +1,9 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
-import { SITE, SKILLS } from '../consts';
-import fs from 'node:fs';
-
-const hasResume = fs.existsSync('public/resume.pdf');
-
-const timeline = [
-  { time: '2026.09', title: '入门 CTF', text: '从 misc 和 web 起步，转向逆向方向系统学习。' },
-  { time: '2026.10', title: '第一次参赛', text: 'ISCTF 2026，主攻 Reverse，写出第一批 writeup。' },
-  { time: '2026.11', title: '搭建这个站点', text: '用 Astro 把题目记录与解题思路沉淀成可检索的库。' },
-];
+import { SITE } from '../consts';
 ---
 
-<BaseLayout title="关于" description="关于我、技能方向与联系方式。">
+<BaseLayout title="关于" description="关于我、联系方式。">
   <div class="wrap">
     <section class="article-top">
       <p class="breadcrumb">
@@ -21,87 +12,16 @@ const timeline = [
       <h1>关于</h1>
     </section>
 
-    <div class="about-grid">
-      <div class="profile">
-        <div class="avatar" aria-hidden="true">S</div>
-        <div>
-          <h2>{SITE.author}</h2>
-          <p>网络空间安全 · 逆向工程方向 · CTF 爱好者</p>
-          <p style="margin-top:6px">把每道题的思路写下来，是最快的学习方式。</p>
-          <div class="contact-row">
-            <a href={`mailto:${SITE.email}`}>email</a>
-            <a href={SITE.github} target="_blank" rel="noopener noreferrer">github</a>
-            <a href="/rss.xml">rss</a>
-            {hasResume && <a href="/resume.pdf" download>简历 PDF ↓</a>}
-          </div>
+    <div class="profile">
+      <div class="avatar" aria-hidden="true">S</div>
+      <div>
+        <h2>{SITE.author}</h2>
+        <div class="contact-row">
+          <a href={`mailto:${SITE.email}`}>email</a>
+          <a href={SITE.github} target="_blank" rel="noopener noreferrer">github</a>
+          <a href="/rss.xml">rss</a>
         </div>
       </div>
-
-      <section>
-        <div class="section-head"><h2>方向</h2></div>
-        <div class="prose">
-          <p>
-            主攻 <strong>Reverse Engineering</strong>：静态分析（IDA / Ghidra）、动态调试（x64dbg / gdb）、
-            常见混淆与反调试对抗，以及把分析过程写成可复现的脚本。
-          </p>
-          <p>
-            同时在补汇编、调试器与 Linux 环境的基础，保证每一步分析都能复现成脚本。
-          </p>
-        </div>
-      </section>
-
-      <section>
-        <div class="section-head"><h2>技能</h2></div>
-        <div class="skills">
-          {
-            SKILLS.map((s) => (
-              <div class="skill">
-                <div class="skill-top">
-                  <strong>{s.name}</strong>
-                  <span>{s.note}</span>
-                </div>
-                <div class="bar" role="img" aria-label={`${s.name} ${s.level}/5`}>
-                  <div style={`width:${s.level * 20}%`} />
-                </div>
-              </div>
-            ))
-          }
-        </div>
-      </section>
-
-      <section>
-        <div class="section-head"><h2>时间线</h2></div>
-        <div class="prose">
-          <ul>
-            {
-              timeline.map((t) => (
-                <li>
-                  <strong>{t.time}</strong> — {t.title}：{t.text}
-                </li>
-              ))
-            }
-          </ul>
-        </div>
-      </section>
-
-      <section>
-        <div class="section-head"><h2>项目</h2></div>
-        <div class="post-list">
-          <a class="card" href={SITE.github} target="_blank" rel="noopener noreferrer">
-            <div class="card-top"><span class="badge" data-cat="Reverse">tool</span></div>
-            <h3>项目占位：把这里换成你的开源仓库</h3>
-            <p>写一句「解决什么问题 + 技术栈 + 结果」，比罗列技术名词有用得多。</p>
-          </a>
-        </div>
-      </section>
-
-      {
-        !hasResume && (
-          <p class="search-hint">
-            简历下载按钮在 public/resume.pdf 存在时自动出现 —— 把 PDF 放进 public/ 目录即可。
-          </p>
-        )
-      }
     </div>
   </div>
 </BaseLayout>

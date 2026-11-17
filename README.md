@@ -6,6 +6,8 @@ Shalowtar 的个人博客：面向 CTF Writeup 的纯静态站点，基于 **Ast
 
 内容全部是 `src/content/writeups/` 下的 Markdown 文件，正文永远在自己手里，换框架也不用重写。
 
+**想改站点、加文章、调样式，看 [`内容维护指南.md`](./内容维护指南.md)**——里面写了每个文件管什么、frontmatter 有哪些字段、哪些地方容易踩坑。
+
 ---
 
 ## 当前状态

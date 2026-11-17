@@ -23,14 +23,6 @@ export const SITE = {
   ],
 };
 
-/** 首页技能矩阵：level 1-5，用来画进度条 */
-export const SKILLS = [
-  { name: '逆向分析', level: 4, note: 'IDA / Ghidra / x64dbg' },
-  { name: 'Python 脚本', level: 4, note: '分析脚本 / 自动化' },
-  { name: 'Linux / WSL', level: 3, note: '调试环境、Docker 复现' },
-  { name: '汇编与调试', level: 3, note: 'x86 / x64 / gdb' },
-];
-
 /** 分类配色（与 global.css 中的 [data-cat] 对应） */
 export const CATEGORIES = ['Reverse', 'Pwn', 'Crypto', 'Web', 'Misc', 'IoT'] as const;
 export const DIFFICULTIES = ['Easy', 'Medium', 'Hard', 'Insane'] as const;

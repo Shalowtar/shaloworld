@@ -1,10 +1,9 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import PostCard from '../components/PostCard.astro';
-import EmptyState from '../components/EmptyState.astro';
 import { getCollection } from 'astro:content';
 import { visiblePosts } from '../utils/posts';
-import { SITE, SKILLS, CATEGORIES } from '../consts';
+import { SITE, CATEGORIES } from '../consts';
 
 const all = visiblePosts(await getCollection('writeups'));
 const latest = all.slice(0, 5);
@@ -20,10 +19,6 @@ const events = new Set(all.map((p) => p.data.event).filter(Boolean));
     <p class="kicker">Reverse Engineering · CTF Writeup</p>
     <h1>{SITE.title}</h1>
     <p class="lead">{SITE.description}</p>
-    <div class="hero-tags">
-      <span class="badge" data-cat="Reverse">逆向</span>
-      <span class="badge">CTF</span>
-    </div>
     <div class="hero-actions">
       <a class="btn btn-primary" href="/writeups/">开始阅读</a>
       <a class="btn" href="/about/">关于作者</a>
@@ -32,67 +27,36 @@ const events = new Set(all.map((p) => p.data.event).filter(Boolean));
 
   {
     all.length > 0 && (
-      <div class="wrap">
-        <div class="stats">
-          <div class="stat">
-            <b>{all.length}</b>
-            <span>篇 Writeup</span>
-          </div>
-          <div class="stat">
-            <b>{events.size || 0}</b>
-            <span>场赛事</span>
-          </div>
-          <div class="stat">
-            <b>{catStats.length}</b>
-            <span>个分类</span>
+      <>
+        <div class="wrap">
+          <div class="stats">
+            <div class="stat">
+              <b>{all.length}</b>
+              <span>篇 Writeup</span>
+            </div>
+            <div class="stat">
+              <b>{events.size || 0}</b>
+              <span>场赛事</span>
+            </div>
+            <div class="stat">
+              <b>{catStats.length}</b>
+              <span>个分类</span>
+            </div>
           </div>
         </div>
-      </div>
+
+        <section class="section wrap">
+          <div class="section-head">
+            <h2>最新 Writeup</h2>
+            <a href="/writeups/">全部与筛选 →</a>
+          </div>
+          <div class="post-list">
+            {latest.map((post) => (
+              <PostCard post={post} />
+            ))}
+          </div>
+        </section>
+      </>
     )
   }
-
-  <section class="section wrap">
-    <div class="section-head">
-      <h2>最新 Writeup</h2>
-      <a href="/writeups/">全部与筛选 →</a>
-    </div>
-
-    {
-      latest.length === 0 ? (
-        <EmptyState
-          title="content/writeups 还是空的"
-          hint="框架已经就绪，写第一篇就能自动出现在这里。文章是纯 Markdown，放进去即发布。"
-          command={'npm run new "题目名" reverse'}
-        />
-      ) : (
-        <div class="post-list">
-          {latest.map((post) => (
-            <PostCard post={post} />
-          ))}
-        </div>
-      )
-    }
-  </section>
-
-  <section class="section wrap">
-    <div class="section-head">
-      <h2>技能矩阵</h2>
-      <a href="/about/">详情 →</a>
-    </div>
-    <div class="skills">
-      {
-        SKILLS.map((s) => (
-          <div class="skill">
-            <div class="skill-top">
-              <strong>{s.name}</strong>
-              <span>{s.note}</span>
-            </div>
-            <div class="bar" role="img" aria-label={`${s.name} 熟练度 ${s.level}/5`}>
-              <div style={`width:${s.level * 20}%`} />
-            </div>
-          </div>
-        ))
-      }
-    </div>
-  </section>
 </BaseLayout>

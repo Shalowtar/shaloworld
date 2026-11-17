@@ -1,7 +1,6 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import PostCard from '../../components/PostCard.astro';
-import EmptyState from '../../components/EmptyState.astro';
 import { getCollection } from 'astro:content';
 import { visiblePosts } from '../../utils/posts';
 import { CATEGORIES } from '../../consts';
@@ -13,7 +12,7 @@ const counts = CATEGORIES.map((c) => ({
 })).filter((c) => c.count > 0);
 ---
 
-<BaseLayout title="Writeup" description="全部 CTF Writeup，按逆向 / Pwn / Crypto / Web / Misc 分类。">
+<BaseLayout title="Writeup" description="全部 CTF Writeup，按分类筛选、按时间倒序。">
   <div class="wrap">
     <section class="article-top">
       <p class="breadcrumb">
@@ -40,13 +39,7 @@ const counts = CATEGORIES.map((c) => ({
     }
 
     {
-      all.length === 0 ? (
-        <EmptyState
-          title="还没有 Writeup"
-          hint="每篇题解是一个 Markdown 文件，放进 src/content/writeups/ 就会自动生成列表页和详情页。"
-          command={'npm run new "题目名" reverse'}
-        />
-      ) : (
+      all.length > 0 && (
         <div class="post-list" id="post-list">
           {all.map((post) => (
             <div class="post-item" data-cat={post.data.category}>

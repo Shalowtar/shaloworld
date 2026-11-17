@@ -1,6 +1,5 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
-import EmptyState from '../components/EmptyState.astro';
 import { getCollection } from 'astro:content';
 import { visiblePosts, formatDate } from '../utils/posts';
 
@@ -29,13 +28,7 @@ const years = [...byYear.entries()].sort((a, b) => b[0] - a[0]);
     </section>
 
     {
-      years.length === 0 ? (
-        <EmptyState
-          title="归档还是空的"
-          hint="按年份分组的时间线，文章发布后会自动归位，不需要手动维护。"
-          command={'npm run new "题目名" pwn'}
-        />
-      ) : (
+      years.length > 0 &&
         years.map(([year, posts]) => (
           <div class="year-group">
             <div class="year-title">{year}</div>
@@ -54,7 +47,6 @@ const years = [...byYear.entries()].sort((a, b) => b[0] - a[0]);
             </ul>
           </div>
         ))
-      )
     }
   </div>
 </BaseLayout>
