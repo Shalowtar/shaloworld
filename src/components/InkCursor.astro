@@ -18,6 +18,7 @@
 
     var INK = '148, 55, 38'; // 朱砂，与之前粒子同色
     var STEP = 3; // 补点间距，越小笔迹越连贯
+    var RING_SPEED = 85; // 悬停墨笔沿描边走的速度（像素/秒），所有框一致
 
     var dpr = Math.min(window.devicePixelRatio || 1, 1.5);
     var W = 0;
@@ -44,6 +45,7 @@
     var hoverRect = null;
     var hoverPoints = [];
     var hoverPointsSig = '';
+    var hoverLen = 1;
     var hoverDir = 1;
     var hoverSince = 0;
     var hoverLeaveAt = 0;
@@ -266,9 +268,21 @@
       return clamp((now - hoverSince) / 240, 0, 1);
     }
 
+    /** 沿采样点累加周长，用来把“每秒多少像素”换算成绕圈位置 */
+    function perimeterLen(list) {
+      var s = 0;
+      for (var i = 1; i < list.length; i += 1) {
+        var dx = list[i][0] - list[i - 1][0];
+        var dy = list[i][1] - list[i - 1][1];
+        s += Math.sqrt(dx * dx + dy * dy);
+      }
+      return s || 1;
+    }
+
     /**
-     * 悬停：墨点沿目标描边围成一整圈，同时有一段更浓的“墨头”绕着走（方向随机）；
-     * 每点都带墨晕，圈上疏密按周长自适应，绕一圈约 2.1 秒。
+     * 悬停：一笔墨沿着目标描边流过去 —— 头部最浓、后面拖着渐淡渐细的墨尾，
+     * 每 3px 叠一个墨点，所以是连贯的一笔而不是一颗颗珠子；
+     * 速度按“每秒走多少像素”算，大框小框拖得一样快（方向随机）。
      */
     function drawHover(now) {
       rctx.clearRect(0, 0, W, H);
@@ -277,32 +291,41 @@
       if (!hoverRect || level < 0.02 || !hoverPoints.length) return;
 
       var len = hoverPoints.length;
+      var L = hoverLen;
       var t = (hoverLeaveAt || now) - hoverSince;
-      var phase = (t / 3400) % 1; // 绕一圈 3.4 秒，慢一点更稳
-      if (phase < 0) phase += 1;
+      var travelled = (t / 1000) * RING_SPEED; // 已经走过的像素
+      if (hoverDir < 0) travelled = -travelled;
+      travelled = ((travelled % L) + L) % L;
 
-      // 周长自适应：大致每 13px 一枚墨点，小标签也不会挤成一片
-      var N = Math.max(14, Math.min(48, Math.round(len / 3.2)));
-      var head = hoverDir > 0 ? phase : 1 - phase;
+      var TAIL = Math.min(180, L * 0.45); // 墨尾长度（像素）
+      var STEP_D = 2.5;
+      var count = Math.max(2, Math.round(TAIL / STEP_D));
 
-      for (var i = 0; i < N; i += 1) {
-        var f0 = i / N;
-        var f = hoverDir > 0 ? f0 + phase : f0 - phase;
-        f = ((f % 1) + 1) % 1;
+      for (var i = 0; i <= count; i += 1) {
+        var d = i * STEP_D;
+        var w = 1 - d / TAIL; // 1 = 墨头
+        if (w <= 0.02) continue;
+        var k = Math.pow(w, 1.35);
 
-        var idx = Math.min(len - 1, Math.floor(f * len));
+        var pos = travelled - hoverDir * d;
+        pos = ((pos % L) + L) % L;
+        var idx = Math.min(len - 1, Math.floor((pos / L) * len));
         var pt = hoverPoints[idx];
 
-        // 离墨头越近越浓，对面最淡；整圈始终都有一层淡墨，所以能围成一圈
-        var d = (f0 - head) % 1;
-        if (d < 0) d += 1;
-        var bump = Math.pow(0.5 + 0.5 * Math.cos(2 * Math.PI * d), 1.6);
-        var a = level * (0.18 + 0.16 * bump);
-        var r = 9 + 4 * bump; // 墨晕更大，向纸里洇得更开
+        var hw = 4.0 * (0.3 + 0.7 * k);
+        var r = hw * 2.6;
 
-        rctx.globalAlpha = clamp(a * 0.9, 0, 1);
+        rctx.globalAlpha = clamp(level * 0.2 * k, 0, 1);
         rctx.drawImage(ringDab, pt[0] - r, pt[1] - r, r * 2, r * 2);
       }
+
+      // 头部一小团更浓的湿墨，让“笔锋”落在纸上有个实点
+      var hi = Math.min(len - 1, Math.floor((travelled / L) * len));
+      var hp = hoverPoints[hi];
+      var hr = 9.5;
+      rctx.globalAlpha = clamp(level * 0.2, 0, 1);
+      rctx.drawImage(ringDab, hp[0] - hr, hp[1] - hr, hr * 2, hr * 2);
+
       rctx.globalAlpha = 1;
     }
 
@@ -368,11 +391,13 @@
         hoverLeaveAt = 0;
         hoverDir = Math.random() < 0.5 ? 1 : -1; // 顺时针或逆时针随机
         hoverPoints = roundRectPoints(hoverRect, 4);
+        hoverLen = perimeterLen(hoverPoints);
         hoverPointsSig = sig;
       } else {
         hoverLeaveAt = 0;
         if (hoverPointsSig !== sig) {
           hoverPoints = roundRectPoints(hoverRect, 4);
+          hoverLen = perimeterLen(hoverPoints);
           hoverPointsSig = sig;
         }
       }
