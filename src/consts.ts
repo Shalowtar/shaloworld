@@ -9,8 +9,8 @@ export const SITE = {
   author: 'Shalowtar',
   /** 部署后的正式域名，务必替换，影响 RSS 与 sitemap */
   url: 'https://shalowtar.com',
-  email: 'shalowtar@example.com',
-  github: 'https://github.com/shalowtar',
+  email: 'zrlwy2007@fomail.com',
+  github: 'https://github.com/Shalowtar',
   /** 顶部导航 */
   nav: [
     { label: 'Writeup', href: '/writeups/' },

@@ -42,6 +42,9 @@ html {
 }
 body {
   margin: 0;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
   background: var(--paper);
   color: var(--ink);
   font-family: var(--font-serif);
@@ -1358,7 +1361,7 @@ body {
 
 /* ---------- 页脚 ---------- */
 .site-footer {
-  margin-top: 90px;
+  margin-top: auto;
   padding: 24px 0 46px;
   border-top: 3px solid var(--ink-strong);
 }
