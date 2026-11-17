@@ -14,7 +14,7 @@ export const SITE = {
   /** 顶部导航 */
   nav: [
     { label: '项目', href: '/projects/' },
-    { label: '题解', href: '/writeups/' },
+    { label: '学习', href: '/writeups/' },
     { label: '标签', href: '/tags/' },
     { label: '归档', href: '/archive/' },
     { label: '关于', href: '/about/' },

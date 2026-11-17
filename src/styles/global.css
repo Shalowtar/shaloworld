@@ -457,6 +457,53 @@ ol {
   gap: 12px;
   flex-wrap: wrap;
 }
+
+/* ---------- 入场 ---------------------------------------- */
+.intro {
+  position: fixed;
+  inset: 0;
+  z-index: 9960;
+  display: none; /* 由脚本打开：没有 JS 时不会盖住页面 */
+  place-items: center;
+  overflow: hidden;
+  text-align: center;
+}
+.intro-bg {
+  position: absolute;
+  inset: 0;
+  background: var(--paper);
+  transition: opacity 780ms ease;
+}
+.intro-stage {
+  position: relative;
+  padding: 0 var(--gutter);
+}
+.intro-hello {
+  margin: 0 0 16px;
+  font-family: var(--font-display);
+  font-size: 1.02rem;
+  letter-spacing: 0.32em;
+  color: var(--ink-soft);
+  transition:
+    opacity 420ms ease,
+    transform 420ms ease;
+}
+/* 与首页 .lead 同一款字形、同一行高，收进去时才能严丝合缝 */
+.intro-name {
+  display: inline-block;
+  margin: 0;
+  font-family: var(--font-serif);
+  font-size: clamp(1.7rem, 5.6vw, 3rem);
+  line-height: 1.95;
+  letter-spacing: 0;
+  color: var(--ink-soft);
+  text-align: left;
+  transform-origin: center center;
+  will-change: transform;
+}
+html.intro-on {
+  overflow: hidden;
+}
 @media (max-width: 640px) {
   :root {
     --gutter: 18px;
