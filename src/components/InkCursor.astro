@@ -182,55 +182,57 @@
       return clamp((now - hoverSince) / 240, 0, 1);
     }
 
-    /** 围框：像一笔绕着目标描过去，方向随机 */
+    // 预先烘焙一枚墨点贴图（中心实、外圈洇开），环绕时直接缩放贴图，避免每帧重建渐变
+    var dabSprite = (function () {
+      var s = document.createElement('canvas');
+      s.width = 64;
+      s.height = 64;
+      var c = s.getContext('2d');
+      var g = c.createRadialGradient(32, 32, 0, 32, 32, 32);
+      g.addColorStop(0, 'rgba(' + INK + ',0.9)');
+      g.addColorStop(0.24, 'rgba(' + INK + ',0.52)');
+      g.addColorStop(0.55, 'rgba(' + INK + ',0.18)');
+      g.addColorStop(0.82, 'rgba(' + INK + ',0.05)');
+      g.addColorStop(1, 'rgba(' + INK + ',0)');
+      c.fillStyle = g;
+      c.beginPath();
+      c.arc(32, 32, 32, 0, Math.PI * 2, false);
+      c.fill();
+      return s;
+    })();
+
+    /**
+     * 悬停：一串墨点绕着目标描边环绕（方向随机），头点浓、尾点淡、每点带墨晕；
+     * 绕一圈约 2.1 秒，速度慢到不抢注意力。
+     */
     function drawHover(now) {
       var level = hoverLevel(now);
       if (!hoverRect || level < 0.02 || !hoverPoints.length) return;
 
-      var p = hoverLeaveAt ? 1 : clamp((now - hoverSince) / 560, 0, 1);
-      var count = Math.max(2, Math.round(hoverPoints.length * p));
-      var list = [];
-      var i;
-      if (hoverDir > 0) {
-        for (i = 0; i < count; i += 1) list.push(hoverPoints[i]);
-      } else {
-        for (i = hoverPoints.length - 1; i >= hoverPoints.length - count; i -= 1) list.push(hoverPoints[i]);
+      var len = hoverPoints.length;
+      var t = (hoverLeaveAt || now) - hoverSince;
+      var phase = (t / 2100) % 1;
+      if (phase < 0) phase += 1;
+
+      var base = hoverDir > 0 ? phase : 1 - phase;
+      var DABS = 6;
+      var GAP = 0.05; // 相邻墨点沿周长的间距（占整圈的比例），留出可数的间隙
+
+      for (var i = 0; i < DABS; i += 1) {
+        var f = base - hoverDir * i * GAP;
+        f = f % 1;
+        if (f < 0) f += 1;
+
+        var idx = Math.min(len - 1, Math.floor(f * len));
+        var pt = hoverPoints[idx];
+        var w = 1 - i / DABS; // 1 = 最前的墨点，越小越靠尾巴
+        var a = Math.pow(w, 1.6) * level;
+        var r = 6.5 + 3.5 * w;
+
+        ctx.globalAlpha = clamp(a * 0.5, 0, 1);
+        ctx.drawImage(dabSprite, pt[0] - r, pt[1] - r, r * 2, r * 2);
       }
-
-      function trace() {
-        ctx.beginPath();
-        ctx.moveTo(list[0][0], list[0][1]);
-        for (var k = 1; k < list.length; k += 1) ctx.lineTo(list[k][0], list[k][1]);
-      }
-
-      ctx.shadowColor = 'rgba(' + INK + ',' + 0.30 * level + ')';
-      ctx.shadowBlur = 9;
-
-      // 外层洇墨
-      trace();
-      ctx.strokeStyle = 'rgba(' + INK + ',' + 0.07 * level + ')';
-      ctx.lineWidth = 9;
-      ctx.stroke();
-
-      // 主笔
-      trace();
-      ctx.strokeStyle = 'rgba(' + INK + ',' + 0.19 * level + ')';
-      ctx.lineWidth = 2.6;
-      ctx.stroke();
-
-      ctx.shadowBlur = 0;
-
-      // 笔锋还没走完时，落笔处点一小团浓墨
-      if (p < 0.995) {
-        var tip = list[list.length - 1];
-        var g = ctx.createRadialGradient(tip[0], tip[1], 0, tip[0], tip[1], 7);
-        g.addColorStop(0, 'rgba(' + INK + ',' + 0.3 * level + ')');
-        g.addColorStop(1, 'rgba(' + INK + ',0)');
-        ctx.fillStyle = g;
-        ctx.beginPath();
-        ctx.arc(tip[0], tip[1], 7, 0, Math.PI * 2, false);
-        ctx.fill();
-      }
+      ctx.globalAlpha = 1;
     }
 
     function render(now) {
