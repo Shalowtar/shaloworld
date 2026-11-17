@@ -40,6 +40,22 @@ import { SITE } from '../consts';
       return;
     }
 
+    // 只在本次进站（同一个标签页会话）第一次打开时播一次；
+    // 想在浏览器里再看一遍，地址后面加 ?intro=1 即可
+    var KEY = 'shaloworld-intro-seen';
+    var replay = /[?&]intro=1(&|$)/.test(location.search);
+    var seen = false;
+    try {
+      seen = sessionStorage.getItem(KEY) === '1';
+    } catch (e) {}
+    if (seen && !replay) {
+      intro.remove();
+      return;
+    }
+    try {
+      sessionStorage.setItem(KEY, '1');
+    } catch (e) {}
+
     intro.style.display = 'grid';
     doc.classList.add('intro-on');
     // 首页的标题与那一行先藏着，等入场的大字落到它们的位置上再换过来
