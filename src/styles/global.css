@@ -85,8 +85,81 @@ ol {
   z-index: 9990;
   mix-blend-mode: multiply;
 }
+
+/* 指针停住时，落点上的墨继续在纸上洇：中心一小团湿墨，外面一圈慢慢摊开、淡去，循环呼吸 */
+.ink-rest {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 0;
+  height: 0;
+  z-index: 9989;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.36s ease;
+  mix-blend-mode: multiply;
+  will-change: transform, opacity;
+}
+.ink-rest.is-idle {
+  opacity: 1;
+}
+.ink-rest.is-hot,
+.ink-rest.is-gone {
+  opacity: 0;
+}
+.ink-rest::before,
+.ink-rest::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(148, 55, 38, 0.3) 0%,
+    rgba(148, 55, 38, 0.16) 42%,
+    rgba(148, 55, 38, 0) 72%
+  );
+}
+.ink-rest::before {
+  width: 10px;
+  height: 10px;
+  animation: ink-rest-breathe 2.8s ease-in-out infinite;
+}
+.ink-rest::after {
+  width: 52px;
+  height: 52px;
+  opacity: 0;
+  animation: ink-rest-spread 2.8s ease-out infinite;
+}
+@keyframes ink-rest-breathe {
+  0%,
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 0.9;
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.16);
+    opacity: 0.66;
+  }
+}
+@keyframes ink-rest-spread {
+  0% {
+    transform: translate(-50%, -50%) scale(0.24);
+    opacity: 0.42;
+  }
+  62% {
+    transform: translate(-50%, -50%) scale(0.82);
+    opacity: 0.18;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 0;
+  }
+}
 @media (pointer: coarse), (prefers-reduced-motion: reduce) {
-  .ink-canvas {
+  .ink-canvas,
+  .ink-rest {
     display: none;
   }
 }
