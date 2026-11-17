@@ -202,8 +202,8 @@
     })();
 
     /**
-     * 悬停：一串墨点绕着目标描边环绕（方向随机），头点浓、尾点淡、每点带墨晕；
-     * 绕一圈约 2.1 秒，速度慢到不抢注意力。
+     * 悬停：墨点沿目标描边围成一整圈，同时有一段更浓的“墨头”绕着走（方向随机）；
+     * 每点都带墨晕，圈上疏密按周长自适应，绕一圈约 2.1 秒。
      */
     function drawHover(now) {
       var level = hoverLevel(now);
@@ -214,22 +214,26 @@
       var phase = (t / 2100) % 1;
       if (phase < 0) phase += 1;
 
-      var base = hoverDir > 0 ? phase : 1 - phase;
-      var DABS = 6;
-      var GAP = 0.05; // 相邻墨点沿周长的间距（占整圈的比例），留出可数的间隙
+      // 周长自适应：大致每 11px 一枚墨点，小标签也不会挤成一片
+      var N = Math.max(16, Math.min(56, Math.round(len / 2.8)));
+      var head = hoverDir > 0 ? phase : 1 - phase;
 
-      for (var i = 0; i < DABS; i += 1) {
-        var f = base - hoverDir * i * GAP;
-        f = f % 1;
-        if (f < 0) f += 1;
+      for (var i = 0; i < N; i += 1) {
+        var f0 = i / N;
+        var f = hoverDir > 0 ? f0 + phase : f0 - phase;
+        f = ((f % 1) + 1) % 1;
 
         var idx = Math.min(len - 1, Math.floor(f * len));
         var pt = hoverPoints[idx];
-        var w = 1 - i / DABS; // 1 = 最前的墨点，越小越靠尾巴
-        var a = Math.pow(w, 1.6) * level;
-        var r = 6.5 + 3.5 * w;
 
-        ctx.globalAlpha = clamp(a * 0.5, 0, 1);
+        // 离墨头越近越浓，对面最淡；整圈始终都有一层淡墨，所以能围成一圈
+        var d = (f0 - head) % 1;
+        if (d < 0) d += 1;
+        var bump = Math.pow(0.5 + 0.5 * Math.cos(2 * Math.PI * d), 1.6);
+        var a = level * (0.22 + 0.2 * bump);
+        var r = 5.6 + 2 * bump;
+
+        ctx.globalAlpha = clamp(a * 0.92, 0, 1);
         ctx.drawImage(dabSprite, pt[0] - r, pt[1] - r, r * 2, r * 2);
       }
       ctx.globalAlpha = 1;
