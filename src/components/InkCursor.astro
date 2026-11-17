@@ -36,6 +36,9 @@
     var running = false;
     var hoverEl = null;
     var hoverRect = null;
+    var hoverPoints = [];
+    var hoverPointsSig = '';
+    var hoverDir = 1;
     var hoverSince = 0;
     var hoverLeaveAt = 0;
     var hoverKey = null;
@@ -94,42 +97,38 @@
       }
     }
 
-    function roundRectPath(x, y, w, h, r) {
-      ctx.beginPath();
-      if (ctx.roundRect) {
-        ctx.roundRect(x, y, w, h, r);
-        return;
+    /** 圆角矩形的轮廓采样点（顺时针，起点在左上角之后） */
+    function roundRectPoints(rect, step) {
+      var rad = Math.min(14, Math.min(rect.width, rect.height) / 2);
+      var pts = [];
+      var L = rect.left;
+      var T = rect.top;
+      var R = rect.left + rect.width;
+      var B = rect.top + rect.height;
+
+      function line(x1, y1, x2, y2) {
+        var d = Math.sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
+        var n = Math.max(1, Math.ceil(d / step));
+        for (var i = 1; i <= n; i += 1) pts.push([x1 + (x2 - x1) * (i / n), y1 + (y2 - y1) * (i / n)]);
       }
-      ctx.moveTo(x + r, y);
-      ctx.arcTo(x + w, y, x + w, y + h, r);
-      ctx.arcTo(x + w, y + h, x, y + h, r);
-      ctx.arcTo(x, y + h, x, y, r);
-      ctx.arcTo(x, y, x + w, y, r);
-      ctx.closePath();
-    }
+      function arc(cx, cy, a0, a1) {
+        var n = Math.max(2, Math.ceil((rad * Math.abs(a1 - a0)) / step));
+        for (var i = 1; i <= n; i += 1) {
+          var a = a0 + (a1 - a0) * (i / n);
+          pts.push([cx + Math.cos(a) * rad, cy + Math.sin(a) * rad]);
+        }
+      }
 
-    /** 围框：几层柔笔叠出来的墨圈，边缘带洇墨 */
-    function drawHover(level) {
-      if (!hoverRect || level < 0.02) return;
-      var r = hoverRect;
-      var a = level;
-
-      ctx.shadowColor = 'rgba(' + INK + ',' + 0.30 * a + ')';
-      ctx.shadowBlur = 9;
-
-      // 外层洇墨
-      roundRectPath(r.left, r.top, r.width, r.height, 14);
-      ctx.strokeStyle = 'rgba(' + INK + ',' + 0.07 * a + ')';
-      ctx.lineWidth = 9;
-      ctx.stroke();
-
-      // 主笔
-      roundRectPath(r.left, r.top, r.width, r.height, 14);
-      ctx.strokeStyle = 'rgba(' + INK + ',' + 0.19 * a + ')';
-      ctx.lineWidth = 2.6;
-      ctx.stroke();
-
-      ctx.shadowBlur = 0;
+      pts.push([L + rad, T]);
+      line(L + rad, T, R - rad, T);
+      arc(R - rad, T + rad, -Math.PI / 2, 0);
+      line(R, T + rad, R, B - rad);
+      arc(R - rad, B - rad, 0, Math.PI / 2);
+      line(R - rad, B, L + rad, B);
+      arc(L + rad, B - rad, Math.PI / 2, Math.PI);
+      line(L, B - rad, L, T + rad);
+      arc(L + rad, T + rad, Math.PI, Math.PI * 1.5);
+      return pts;
     }
 
     /** 围框的浓淡：出现时淡入，离开后淡出 */
@@ -139,9 +138,60 @@
       return clamp((now - hoverSince) / 240, 0, 1);
     }
 
+    /** 围框：像一笔绕着目标描过去，方向随机 */
+    function drawHover(now) {
+      var level = hoverLevel(now);
+      if (!hoverRect || level < 0.02 || !hoverPoints.length) return;
+
+      var p = hoverLeaveAt ? 1 : clamp((now - hoverSince) / 560, 0, 1);
+      var count = Math.max(2, Math.round(hoverPoints.length * p));
+      var list = [];
+      var i;
+      if (hoverDir > 0) {
+        for (i = 0; i < count; i += 1) list.push(hoverPoints[i]);
+      } else {
+        for (i = hoverPoints.length - 1; i >= hoverPoints.length - count; i -= 1) list.push(hoverPoints[i]);
+      }
+
+      function trace() {
+        ctx.beginPath();
+        ctx.moveTo(list[0][0], list[0][1]);
+        for (var k = 1; k < list.length; k += 1) ctx.lineTo(list[k][0], list[k][1]);
+      }
+
+      ctx.shadowColor = 'rgba(' + INK + ',' + 0.30 * level + ')';
+      ctx.shadowBlur = 9;
+
+      // 外层洇墨
+      trace();
+      ctx.strokeStyle = 'rgba(' + INK + ',' + 0.07 * level + ')';
+      ctx.lineWidth = 9;
+      ctx.stroke();
+
+      // 主笔
+      trace();
+      ctx.strokeStyle = 'rgba(' + INK + ',' + 0.19 * level + ')';
+      ctx.lineWidth = 2.6;
+      ctx.stroke();
+
+      ctx.shadowBlur = 0;
+
+      // 笔锋还没走完时，落笔处点一小团浓墨
+      if (p < 0.995) {
+        var tip = list[list.length - 1];
+        var g = ctx.createRadialGradient(tip[0], tip[1], 0, tip[0], tip[1], 7);
+        g.addColorStop(0, 'rgba(' + INK + ',' + 0.3 * level + ')');
+        g.addColorStop(1, 'rgba(' + INK + ',0)');
+        ctx.fillStyle = g;
+        ctx.beginPath();
+        ctx.arc(tip[0], tip[1], 7, 0, Math.PI * 2, false);
+        ctx.fill();
+      }
+    }
+
     function render(now) {
       ctx.clearRect(0, 0, W, H);
-      drawHover(hoverLevel(now));
+      drawHover(now);
       drawTrail(now);
       lastRender = now;
     }
@@ -197,12 +247,20 @@
         width: r.width + 16,
         height: r.height + 16,
       };
+      var sig = Math.round(hoverRect.left) + ',' + Math.round(hoverRect.top) + ',' + Math.round(hoverRect.width) + ',' + Math.round(hoverRect.height);
       if (hoverKey !== hoverEl) {
         hoverKey = hoverEl;
         hoverSince = performance.now();
         hoverLeaveAt = 0;
+        hoverDir = Math.random() < 0.5 ? 1 : -1; // 顺时针或逆时针随机
+        hoverPoints = roundRectPoints(hoverRect, 4);
+        hoverPointsSig = sig;
       } else {
         hoverLeaveAt = 0;
+        if (hoverPointsSig !== sig) {
+          hoverPoints = roundRectPoints(hoverRect, 4);
+          hoverPointsSig = sig;
+        }
       }
     }
 
