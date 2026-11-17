@@ -1362,8 +1362,8 @@ body {
 /* ---------- 页脚 ---------- */
 .site-footer {
   margin-top: auto;
-  padding: 24px 0 46px;
-  border-top: 3px solid var(--ink-strong);
+  padding: 22px 0 44px;
+  border-top: 1px solid var(--rule);
 }
 .footer-inner {
   display: flex;
