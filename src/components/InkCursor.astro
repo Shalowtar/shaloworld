@@ -297,25 +297,25 @@
       if (hoverDir < 0) travelled = -travelled;
       travelled = ((travelled % L) + L) % L;
 
-      var TAIL = Math.min(180, L * 0.45); // 墨尾长度（像素）
+      var TAIL = L * 0.9; // 墨尾绕满几乎整圈，只在墨头前方留一小段空当
       var STEP_D = 2.5;
       var count = Math.max(2, Math.round(TAIL / STEP_D));
 
       for (var i = 0; i <= count; i += 1) {
         var d = i * STEP_D;
-        var w = 1 - d / TAIL; // 1 = 墨头
-        if (w <= 0.02) continue;
-        var k = Math.pow(w, 1.35);
+        var w = d / TAIL; // 0 = 墨头，1 = 墨尾末端
+        if (w >= 0.99) continue;
+        var k = Math.pow(1 - w, 0.6); // 收得很缓，尾段才不会提前消失
 
         var pos = travelled - hoverDir * d;
         pos = ((pos % L) + L) % L;
         var idx = Math.min(len - 1, Math.floor((pos / L) * len));
         var pt = hoverPoints[idx];
 
-        var hw = 4.0 * (0.3 + 0.7 * k);
+        var hw = 3.5 * (0.55 + 0.45 * k);
         var r = hw * 2.6;
 
-        rctx.globalAlpha = clamp(level * 0.2 * k, 0, 1);
+        rctx.globalAlpha = clamp(level * 0.22 * k, 0, 1);
         rctx.drawImage(ringDab, pt[0] - r, pt[1] - r, r * 2, r * 2);
       }
 
