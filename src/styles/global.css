@@ -82,45 +82,18 @@ ol {
   pointer-events: none;
   z-index: 9990;
 }
-.ink-dot,
-.ink-ring {
+.ink-particle {
   position: absolute;
   left: 0;
   top: 0;
   border-radius: 50%;
+  background: var(--accent);
   opacity: 0;
-  transition: opacity 0.3s ease, width 0.2s ease, height 0.2s ease, margin 0.2s ease,
-    border-color 0.2s ease, background-color 0.2s ease;
+  transition: opacity 0.45s ease;
   will-change: transform;
 }
-.ink-dot {
-  z-index: 2;
-  width: 5px;
-  height: 5px;
-  margin: -2.5px 0 0 -2.5px;
-  background: var(--accent);
-}
-.ink-ring {
-  width: 20px;
-  height: 20px;
-  margin: -10px 0 0 -10px;
-  border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
-}
-.ink-cursor.is-on .ink-dot,
-.ink-cursor.is-on .ink-ring {
-  opacity: 1;
-}
-.ink-cursor.is-hover .ink-ring {
-  width: 30px;
-  height: 30px;
-  margin: -15px 0 0 -15px;
-  border-color: var(--accent);
-  background: color-mix(in srgb, var(--accent) 5%, transparent);
-}
-.ink-cursor.is-down .ink-dot {
-  width: 7px;
-  height: 7px;
-  margin: -3.5px 0 0 -3.5px;
+.ink-cursor.is-on .ink-particle {
+  opacity: var(--o, 0.6);
 }
 @media (pointer: coarse), (prefers-reduced-motion: reduce) {
   .ink-cursor {

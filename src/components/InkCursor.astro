@@ -1,7 +1,4 @@
-<div class="ink-cursor" aria-hidden="true">
-  <span class="ink-dot"></span>
-  <span class="ink-ring"></span>
-</div>
+<div class="ink-cursor" aria-hidden="true"></div>
 
 <script is:inline>
   (function () {
@@ -11,68 +8,169 @@
 
     var root = document.querySelector('.ink-cursor');
     if (!root) return;
-    var dot = root.querySelector('.ink-dot');
-    var ring = root.querySelector('.ink-ring');
 
-    var x = -200;
-    var y = -200;
-    var rx = -200;
-    var ry = -200;
-    var visible = false;
-    var idle = null;
+    var COUNT = 14;
+    var particles = [];
 
-    function place(el, px, py) {
-      el.style.transform = 'translate3d(' + px + 'px,' + py + 'px,0)';
+    for (var i = 0; i < COUNT; i += 1) {
+      var el = document.createElement('span');
+      el.className = 'ink-particle';
+      var size = 2 + Math.random() * 3; // 2 – 5px
+      el.style.width = size + 'px';
+      el.style.height = size + 'px';
+      el.style.marginLeft = -size / 2 + 'px';
+      el.style.marginTop = -size / 2 + 'px';
+      el.style.setProperty('--o', (0.35 + Math.random() * 0.5).toFixed(2));
+      root.appendChild(el);
+      particles.push({
+        el: el,
+        x: -400,
+        y: -400,
+        lag: 0.09 + Math.random() * 0.2,
+        radius: 2 + Math.random() * 11,
+        angle: Math.random() * Math.PI * 2,
+        spin: 0.4 + Math.random() * 0.8,
+      });
     }
 
-    function interactive(target) {
-      if (!target || !target.closest) return false;
-      return !!target.closest('a, button, input, select, textarea, .chip, .flag-btn, .lightbox');
+    var mx = -400;
+    var my = -400;
+    var inside = false;
+    var hoverRect = null;
+    var hoverEl = null;
+    var frame = 0;
+    var idleTimer = null;
+
+    function place(el, x, y) {
+      el.style.transform = 'translate3d(' + x + 'px,' + y + 'px,0)';
     }
 
-    window.addEventListener(
+    /** 沿矩形周长取点，f ∈ [0,1) */
+    function perimeter(rect, f) {
+      var w = rect.width;
+      var h = rect.height;
+      var total = 2 * (w + h);
+      var d = ((f % 1) + 1) % 1 * total;
+      if (d < w) return [rect.left + d, rect.top];
+      d -= w;
+      if (d < h) return [rect.right, rect.top + d];
+      d -= h;
+      if (d < w) return [rect.right - d, rect.bottom];
+      d -= w;
+      return [rect.left, rect.bottom - d];
+    }
+
+    function computeHoverRect() {
+      if (!hoverEl) {
+        hoverRect = null;
+        return;
+      }
+      var r = hoverEl.getBoundingClientRect();
+      // 目标太大时不围框（否则整篇文章卡片会被一圈墨点圈住，很吵）
+      if (r.width > 320 || r.height > 120 || r.width * r.height > 34000) {
+        hoverRect = null;
+        return;
+      }
+      var pad = 8;
+      hoverRect = {
+        left: r.left - pad,
+        top: r.top - pad,
+        right: r.right + pad,
+        bottom: r.bottom + pad,
+        width: r.width + pad * 2,
+        height: r.height + pad * 2,
+      };
+    }
+
+    function hitTest(target) {
+      if (!target || !target.closest) return null;
+      return target.closest(
+        'a, button, input, select, textarea, .chip, .flag-btn, .lightbox, .post-item'
+      );
+    }
+
+    document.addEventListener(
       'mousemove',
       function (e) {
-        if (e.target && e.target.tagName === 'IFRAME') {
-          root.classList.remove('is-on');
-          visible = false;
-          return;
-        }
-        x = e.clientX;
-        y = e.clientY;
-        if (!visible) {
-          visible = true;
-          rx = x;
-          ry = y;
+        mx = e.clientX;
+        my = e.clientY;
+        if (!inside) {
+          inside = true;
+          for (var k = 0; k < particles.length; k += 1) {
+            particles[k].x = mx;
+            particles[k].y = my;
+            place(particles[k].el, mx, my);
+          }
           root.classList.add('is-on');
         }
-        place(dot, x, y);
-        root.classList.toggle('is-hover', interactive(e.target));
-        clearTimeout(idle);
-        idle = setTimeout(function () {
+        hoverEl = hitTest(e.target);
+        computeHoverRect();
+        clearTimeout(idleTimer);
+        idleTimer = setTimeout(function () {
           root.classList.remove('is-on');
-          visible = false;
-        }, 1800);
+        }, 2400);
       },
       { passive: true }
     );
 
-    window.addEventListener('mousedown', function () {
-      root.classList.add('is-down');
-    });
-    window.addEventListener('mouseup', function () {
-      root.classList.remove('is-down');
-    });
-    document.addEventListener('mouseleave', function () {
+    // 移到内嵌 PDF、iframe 时，父页面收不到 mousemove，让墨点自然消散
+    document.addEventListener(
+      'mouseover',
+      function (e) {
+        if (e.target && e.target.tagName === 'IFRAME') {
+          root.classList.remove('is-on');
+          inside = false;
+          hoverEl = null;
+          hoverRect = null;
+        }
+      },
+      true
+    );
+
+    window.addEventListener(
+      'scroll',
+      function () {
+        computeHoverRect();
+      },
+      { passive: true }
+    );
+
+    window.addEventListener('blur', function () {
       root.classList.remove('is-on');
-      visible = false;
     });
 
-    (function tick() {
-      rx += (x - rx) * 0.16;
-      ry += (y - ry) * 0.16;
-      place(ring, rx, ry);
+    document.addEventListener('mouseleave', function () {
+      root.classList.remove('is-on');
+      inside = false;
+    });
+
+    function tick() {
+      frame += 1;
+      for (var i = 0; i < particles.length; i += 1) {
+        var p = particles[i];
+        var tx = p.x;
+        var ty = p.y;
+
+        if (inside && hoverRect) {
+          // 散开：沿目标轮廓铺成虚线框，缓慢环绕
+          var at = perimeter(hoverRect, i / particles.length + frame * 0.0007);
+          tx = at[0];
+          ty = at[1];
+        } else if (inside) {
+          // 凝聚：围成一小团，轻微呼吸
+          var a = p.angle + frame * 0.0016 * p.spin;
+          var r = p.radius + Math.sin(frame * 0.004 + p.angle) * 1.5;
+          tx = mx + Math.cos(a) * r;
+          ty = my + Math.sin(a) * r;
+        }
+
+        p.x += (tx - p.x) * p.lag;
+        p.y += (ty - p.y) * p.lag;
+        place(p.el, p.x, p.y);
+      }
       requestAnimationFrame(tick);
-    })();
+    }
+
+    requestAnimationFrame(tick);
   })();
 </script>
