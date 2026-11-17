@@ -1,8 +1,4 @@
 <canvas class="ink-canvas" aria-hidden="true"></canvas>
-<div class="ink-caret" aria-hidden="true">
-  <span class="ink-caret-dot"></span>
-  <span class="ink-caret-label"></span>
-</div>
 
 <script is:inline>
   (function () {
@@ -14,13 +10,6 @@
     if (!canvas) return;
     var ctx = canvas.getContext('2d');
     if (!ctx) return;
-
-    var caret = document.querySelector('.ink-caret');
-    var caretLabel = caret && caret.querySelector('.ink-caret-label');
-    if (!caret || !caretLabel) return;
-
-    // 隐去系统指针，改由这枚朱砂点代替
-    document.documentElement.classList.add('has-ink-caret');
 
     var INK = '148, 55, 38'; // 朱砂，与之前粒子同色
     var LIFE = 900; // 墨迹存活时长（毫秒）
@@ -59,53 +48,8 @@
     var headY = 0;
     var lastRender = 0;
 
-    // 自绘指针的位置状态
-    var curX = 0;
-    var curY = 0;
-    var caretVisible = false;
-
     function clamp(v, lo, hi) {
       return v < lo ? lo : v > hi ? hi : v;
-    }
-
-    /** 悬停时标签文案 */
-    function labelFor(target) {
-      if (!target || !target.closest) return '';
-      var el = target.closest('a, button, input, select, textarea, .chip');
-      if (!el) return '';
-      if (el.matches('input, textarea')) return '输入';
-      if (el.classList.contains('chip')) return '筛选';
-      if (el.matches('a')) {
-        var href = el.getAttribute('href') || '';
-        if (/^\/writeups\/[^/]+\/?$/.test(href)) return '阅读';
-        if (el.classList.contains('btn-primary')) return '开始';
-        return '查看';
-      }
-      return '查看';
-    }
-
-    /**
-     * 摆放朱砂点：坐标夹在视口内避免半边出界；定位直接对齐指针，不做任何缓动，
-     * 保证和系统指针完全同速同行，拖尾感由下面的墨迹层负责。
-     */
-    function placeCaret(x, y) {
-      var tx = clamp(x, 4, Math.max(4, W - 4));
-      var ty = clamp(y, 4, Math.max(4, H - 4));
-      curX = tx;
-      curY = ty;
-      caret.style.transform = 'translate3d(' + tx + 'px,' + ty + 'px,0)';
-    }
-
-    function showCaret() {
-      if (caretVisible) return;
-      caretVisible = true;
-      caret.classList.add('is-on');
-    }
-
-    function hideCaret() {
-      caret.classList.remove('is-on');
-      caret.classList.remove('is-hot');
-      caretVisible = false;
     }
 
     /** 墨迹：逐段描线，越靠后越淡越细，形成自然渐变拖尾 */
@@ -365,19 +309,6 @@
         headY = y;
         lastHeadAt = now;
 
-        // 自绘指针：贴边时夹在视口内，远跳直接归位
-        cancelHide();
-        showCaret();
-        placeCaret(x, y);
-
-        var label = labelFor(e.target);
-        if (label) {
-          caretLabel.textContent = label;
-          caret.classList.add('is-hot');
-        } else {
-          caret.classList.remove('is-hot');
-        }
-
         hoverEl = hitTest(e.target);
         updateHover();
         ensureLoop();
@@ -391,39 +322,11 @@
       function (e) {
         if (e.target && e.target.tagName === 'IFRAME') {
           hoverEl = null;
-          hideCaret();
           if (hoverRect && !hoverLeaveAt) hoverLeaveAt = performance.now();
         }
       },
       true
     );
-
-    // 真离开窗口才隐藏，而且延迟一拍：
-    // 指针掠到窗口边缘、滚到滚动条上时浏览器会先发一次 pointerout(null)，
-    // 立刻隐藏就会闪一下再出现，看起来像点在边缘乱跳。留 400ms 缓冲，期间有任何事件都作废。
-    var hideTimer = 0;
-    function cancelHide() {
-      if (hideTimer) {
-        clearTimeout(hideTimer);
-        hideTimer = 0;
-      }
-    }
-    window.addEventListener('pointerout', function (e) {
-      if (e.relatedTarget !== null) return;
-      cancelHide();
-      hideTimer = setTimeout(function () {
-        hideTimer = 0;
-        hideCaret();
-      }, 400);
-    });
-    window.addEventListener('pointerenter', function () {
-      cancelHide();
-      showCaret();
-    });
-    window.addEventListener('blur', function () {
-      cancelHide();
-      hideCaret();
-    });
 
     document.addEventListener('mouseleave', function () {
       hoverEl = null;
