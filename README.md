@@ -261,13 +261,28 @@ HTTPS 由平台自动签发，通常几分钟生效，不用自己搞证书。�
 
 ### Cloudflare Pages（推荐，国内访问相对稳）
 
-1. 推到 GitHub 仓库
-2. Cloudflare Pages 关联仓库：Build command `npm run build`，Output `dist`
-3. 绑自定义域名
+1. 把仓库推到 GitHub
+2. Cloudflare Dashboard → Workers & Pages → Create → Pages → Connect to Git，选这个仓库
+3. 构建设置填：
+
+| 项 | 值 |
+| --- | --- |
+| Framework preset | Astro |
+| Build command | `npm run build` |
+| Build output directory | `dist` |
+| Node 版本（环境变量） | `NODE_VERSION` = `22.16.0` |
+
+**为什么必须设 Node 版本**：这个站锁定在 `astro@6.4.8`，要求 Node ≥ 22.12。Cloudflare 默认版本可能低于这个数，构建会直接失败。报错里出现 `Astro requires Node >=22.12.0` 就是这个问题。
+
+**还要加一个环境变量**：`NPM_CONFIG_REGISTRY` = `https://registry.npmjs.org`。
+项目里的 `.npmrc` 指向国内镜像 `registry.npmmirror.com`（本机装依赖快），但 Cloudflare 的构建机在海外，走国内镜像可能超时；用环境变量覆盖回官方源更稳。
+
+4. Deploy 后会得到一个 `https://<项目名>.pages.dev`，**这就是可以发给别人的链接**
+5. 绑定自定义域名见上一节
 
 ### Vercel
 
-同样导入仓库，框架会自动识别为 Astro，输出 `dist`。
+同样导入仓库，框架会自动识别为 Astro，输出 `dist`。若构建报 Node 版本错误，在 Settings → General → Node.js Version 选 22.x。
 
 ### GitHub Pages
 
@@ -281,10 +296,9 @@ HTTPS 由平台自动签发，通常几分钟生效，不用自己搞证书。�
 
 ## 备份
 
-内容就是 `src/content/writeups/` 这一个目录，一定要双远端：
+内容就是 `src/content/writeups/` 这一个目录，一定要双远端（本地仓库已初始化好，直接加远端即可）：
 
 ```bash
-git init
 git remote add origin https://github.com/<你>/<仓库>.git
 git remote set-url --add --push origin https://gitee.com/<你>/<仓库>.git
 ```
