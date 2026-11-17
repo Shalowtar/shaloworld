@@ -1,4 +1,4 @@
-<div class="ink-cursor" aria-hidden="true"></div>
+<canvas class="ink-canvas" aria-hidden="true"></canvas>
 
 <script is:inline>
   (function () {
@@ -6,171 +6,204 @@
     var calm = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (!fine || calm) return;
 
-    var root = document.querySelector('.ink-cursor');
-    if (!root) return;
+    var canvas = document.querySelector('.ink-canvas');
+    if (!canvas) return;
+    var ctx = canvas.getContext('2d');
+    if (!ctx) return;
 
-    var COUNT = 14;
-    var particles = [];
+    var INK = '148, 55, 38'; // var(--accent)
+    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+    var W = 0;
+    var H = 0;
 
-    for (var i = 0; i < COUNT; i += 1) {
-      var el = document.createElement('span');
-      el.className = 'ink-particle';
-      var size = 2 + Math.random() * 3; // 2 – 5px
-      el.style.width = size + 'px';
-      el.style.height = size + 'px';
-      el.style.marginLeft = -size / 2 + 'px';
-      el.style.marginTop = -size / 2 + 'px';
-      el.style.setProperty('--o', (0.35 + Math.random() * 0.5).toFixed(2));
-      root.appendChild(el);
-      particles.push({
-        el: el,
-        x: -400,
-        y: -400,
-        lag: 0.09 + Math.random() * 0.2,
-        radius: 2 + Math.random() * 11,
-        angle: Math.random() * Math.PI * 2,
-        spin: 0.4 + Math.random() * 0.8,
-      });
+    function resize() {
+      W = window.innerWidth;
+      H = window.innerHeight;
+      canvas.width = Math.round(W * dpr);
+      canvas.height = Math.round(H * dpr);
+      canvas.style.width = W + 'px';
+      canvas.style.height = H + 'px';
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     }
+    resize();
 
-    var mx = -400;
-    var my = -400;
-    var inside = false;
+    var lastX = null;
+    var lastY = null;
+    var lastStamp = 0;
+    var running = false;
     var hoverRect = null;
     var hoverEl = null;
-    var frame = 0;
-    var idleTimer = null;
 
-    function place(el, x, y) {
-      el.style.transform = 'translate3d(' + x + 'px,' + y + 'px,0)';
+    /** 一枚软边墨点 */
+    function stamp(x, y, r, a) {
+      var g = ctx.createRadialGradient(x, y, 0, x, y, r);
+      g.addColorStop(0, 'rgba(' + INK + ',' + a + ')');
+      g.addColorStop(0.45, 'rgba(' + INK + ',' + a * 0.55 + ')');
+      g.addColorStop(1, 'rgba(' + INK + ',0)');
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.arc(x, y, r, 0, Math.PI * 2, false);
+      ctx.fill();
     }
 
-    /** 沿矩形周长取点，f ∈ [0,1) */
-    function perimeter(rect, f) {
+    /** 沿目标轮廓描一圈墨线 */
+    function inkRect(rect, alpha, width) {
+      var x = rect.left;
+      var y = rect.top;
       var w = rect.width;
       var h = rect.height;
-      var total = 2 * (w + h);
-      var d = ((f % 1) + 1) % 1 * total;
-      if (d < w) return [rect.left + d, rect.top];
-      d -= w;
-      if (d < h) return [rect.right, rect.top + d];
-      d -= h;
-      if (d < w) return [rect.right - d, rect.bottom];
-      d -= w;
-      return [rect.left, rect.bottom - d];
+      var r = 13;
+      ctx.beginPath();
+      if (ctx.roundRect) {
+        ctx.roundRect(x, y, w, h, r);
+      } else {
+        ctx.moveTo(x + r, y);
+        ctx.arcTo(x + w, y, x + w, y + h, r);
+        ctx.arcTo(x + w, y + h, x, y + h, r);
+        ctx.arcTo(x, y + h, x, y, r);
+        ctx.arcTo(x, y, x + w, y, r);
+        ctx.closePath();
+      }
+      ctx.lineWidth = width;
+      ctx.strokeStyle = 'rgba(' + INK + ',' + alpha + ')';
+      ctx.shadowColor = 'rgba(' + INK + ',' + alpha * 1.6 + ')';
+      ctx.shadowBlur = 3;
+      ctx.stroke();
+      ctx.shadowBlur = 0;
     }
 
-    function computeHoverRect() {
+    function hitTest(target) {
+      if (!target || !target.closest) return null;
+      return target.closest('a, button, input, select, textarea, .chip, .flag-btn, .lightbox');
+    }
+
+    function updateHoverRect() {
       if (!hoverEl) {
         hoverRect = null;
         return;
       }
       var r = hoverEl.getBoundingClientRect();
-      // 目标太大时不围框（否则整篇文章卡片会被一圈墨点圈住，很吵）
       if (r.width > 320 || r.height > 120 || r.width * r.height > 34000) {
         hoverRect = null;
         return;
       }
-      var pad = 8;
       hoverRect = {
-        left: r.left - pad,
-        top: r.top - pad,
-        right: r.right + pad,
-        bottom: r.bottom + pad,
-        width: r.width + pad * 2,
-        height: r.height + pad * 2,
+        left: r.left - 7,
+        top: r.top - 7,
+        right: r.right + 7,
+        bottom: r.bottom + 7,
+        width: r.width + 14,
+        height: r.height + 14,
       };
     }
 
-    function hitTest(target) {
-      if (!target || !target.closest) return null;
-      return target.closest(
-        'a, button, input, select, textarea, .chip, .flag-btn, .lightbox, .post-item'
-      );
+    function ensureLoop() {
+      if (running) return;
+      running = true;
+      requestAnimationFrame(frame);
+    }
+
+    function frame() {
+      var now = performance.now();
+      var idle = now - lastStamp;
+      var hovering = !!hoverRect;
+
+      // 用 destination-out 缓慢擦除，模拟墨迹干涸
+      ctx.globalCompositeOperation = 'destination-out';
+      ctx.fillStyle = 'rgba(0, 0, 0,' + (idle > 420 ? 0.085 : 0.03) + ')';
+      ctx.fillRect(0, 0, W, H);
+      ctx.globalCompositeOperation = 'source-over';
+
+      if (hovering) {
+        inkRect(hoverRect, 0.035, 2);
+      }
+
+      if (!hovering && idle > 1400) {
+        ctx.clearRect(0, 0, W, H);
+        running = false;
+        return;
+      }
+      requestAnimationFrame(frame);
     }
 
     document.addEventListener(
       'mousemove',
       function (e) {
-        mx = e.clientX;
-        my = e.clientY;
-        if (!inside) {
-          inside = true;
-          for (var k = 0; k < particles.length; k += 1) {
-            particles[k].x = mx;
-            particles[k].y = my;
-            place(particles[k].el, mx, my);
-          }
-          root.classList.add('is-on');
+        var x = e.clientX;
+        var y = e.clientY;
+
+        if (lastX === null) {
+          lastX = x;
+          lastY = y;
         }
+
+        // 在两点之间按固定步长补点，快速甩动时线条不会断成珠
+        var dx = x - lastX;
+        var dy = y - lastY;
+        var dist = Math.sqrt(dx * dx + dy * dy);
+        var stepSize = 3.5;
+        var steps = Math.min(48, Math.max(1, Math.round(dist / stepSize)));
+
+        for (var s = 1; s <= steps; s += 1) {
+          var t = s / steps;
+          var px = lastX + dx * t;
+          var py = lastY + dy * t;
+          // 慢速时墨点更大更浓，快速时更细更淡
+          var radius = 4.6 + Math.min(4, 14 / (dist + 6));
+          var alpha = 0.05 + Math.min(0.05, 4 / (dist + 24));
+          stamp(px, py, radius, alpha);
+        }
+
+        lastX = x;
+        lastY = y;
+        lastStamp = performance.now();
+
         hoverEl = hitTest(e.target);
-        computeHoverRect();
-        clearTimeout(idleTimer);
-        idleTimer = setTimeout(function () {
-          root.classList.remove('is-on');
-        }, 2400);
+        updateHoverRect();
+        if (hoverRect) {
+          // 悬停时立刻沿目标轮廓落一圈墨，随后由动画帧继续加深
+          inkRect(hoverRect, 0.06, 2);
+        }
+        ensureLoop();
       },
       { passive: true }
     );
 
-    // 移到内嵌 PDF、iframe 时，父页面收不到 mousemove，让墨点自然消散
+    document.addEventListener(
+      'mousedown',
+      function (e) {
+        stamp(e.clientX, e.clientY, 12, 0.14);
+        lastStamp = performance.now();
+        ensureLoop();
+      },
+      { passive: true }
+    );
+
+    // 移到内嵌 PDF / iframe 时父页面收不到 mousemove，墨迹自然干涸
     document.addEventListener(
       'mouseover',
       function (e) {
         if (e.target && e.target.tagName === 'IFRAME') {
-          root.classList.remove('is-on');
-          inside = false;
           hoverEl = null;
           hoverRect = null;
+          lastStamp = performance.now() - 300;
         }
       },
       true
     );
 
-    window.addEventListener(
-      'scroll',
-      function () {
-        computeHoverRect();
-      },
-      { passive: true }
-    );
-
-    window.addEventListener('blur', function () {
-      root.classList.remove('is-on');
-    });
+    window.addEventListener('scroll', updateHoverRect, { passive: true });
 
     document.addEventListener('mouseleave', function () {
-      root.classList.remove('is-on');
-      inside = false;
+      hoverEl = null;
+      hoverRect = null;
+      lastStamp = performance.now() - 300;
     });
 
-    function tick() {
-      frame += 1;
-      for (var i = 0; i < particles.length; i += 1) {
-        var p = particles[i];
-        var tx = p.x;
-        var ty = p.y;
-
-        if (inside && hoverRect) {
-          // 散开：沿目标轮廓铺成虚线框，缓慢环绕
-          var at = perimeter(hoverRect, i / particles.length + frame * 0.0007);
-          tx = at[0];
-          ty = at[1];
-        } else if (inside) {
-          // 凝聚：围成一小团，轻微呼吸
-          var a = p.angle + frame * 0.0016 * p.spin;
-          var r = p.radius + Math.sin(frame * 0.004 + p.angle) * 1.5;
-          tx = mx + Math.cos(a) * r;
-          ty = my + Math.sin(a) * r;
-        }
-
-        p.x += (tx - p.x) * p.lag;
-        p.y += (ty - p.y) * p.lag;
-        place(p.el, p.x, p.y);
-      }
-      requestAnimationFrame(tick);
-    }
-
-    requestAnimationFrame(tick);
+    window.addEventListener('resize', function () {
+      resize();
+      lastX = null;
+      lastY = null;
+    });
   })();
 </script>
