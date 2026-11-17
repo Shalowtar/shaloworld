@@ -128,18 +128,8 @@ ol {
   letter-spacing: 0.03em;
   white-space: nowrap;
 }
-.logo .tilde {
+.logo .bracket {
   color: var(--accent);
-  margin-right: 1px;
-  font-size: 0.85em;
-}
-.logo .cursor {
-  display: inline-block;
-  width: 6px;
-  height: 6px;
-  margin-left: 7px;
-  background: var(--accent);
-  vertical-align: 0.18em;
 }
 .mast-rule {
   flex: 1;
@@ -331,7 +321,7 @@ ol {
   line-height: 1.25;
   letter-spacing: 0.02em;
   margin: 0 0 22px;
-  color: var(--ink-strong);
+  color: var(--accent);
 }
 .hero h1 em {
   font-style: normal;
