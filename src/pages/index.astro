@@ -1,17 +1,6 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
-import PostCard from '../components/PostCard.astro';
-import { getCollection } from 'astro:content';
-import { visiblePosts } from '../utils/posts';
-import { SITE, CATEGORIES } from '../consts';
-
-const all = visiblePosts(await getCollection('writeups'));
-const latest = all.slice(0, 5);
-const catStats = CATEGORIES.map((c) => ({
-  name: c,
-  count: all.filter((p) => p.data.category === c).length,
-})).filter((c) => c.count > 0);
-const events = new Set(all.map((p) => p.data.event).filter(Boolean));
+import { SITE } from '../consts';
 ---
 
 <BaseLayout description={SITE.description}>
@@ -23,39 +12,4 @@ const events = new Set(all.map((p) => p.data.event).filter(Boolean));
       <a class="btn" href="/about/">关于作者</a>
     </div>
   </section>
-
-  {
-    all.length > 0 && (
-      <>
-        <div class="wrap">
-          <div class="stats">
-            <div class="stat">
-              <b>{all.length}</b>
-              <span>篇 Writeup</span>
-            </div>
-            <div class="stat">
-              <b>{events.size || 0}</b>
-              <span>场赛事</span>
-            </div>
-            <div class="stat">
-              <b>{catStats.length}</b>
-              <span>个分类</span>
-            </div>
-          </div>
-        </div>
-
-        <section class="section wrap">
-          <div class="section-head">
-            <h2>最新 Writeup</h2>
-            <a href="/writeups/">全部与筛选 →</a>
-          </div>
-          <div class="post-list">
-            {latest.map((post) => (
-              <PostCard post={post} />
-            ))}
-          </div>
-        </section>
-      </>
-    )
-  }
 </BaseLayout>
