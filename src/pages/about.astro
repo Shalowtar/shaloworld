@@ -15,7 +15,7 @@ const lastUpdate = all.length
 ---
 
 <BaseLayout title="关于" description="关于我、联系方式。">
-  <div class="wrap">
+  <div class="wrap about-page">
     <section class="article-top">
       <p class="breadcrumb">
         <a href="/">~</a><span class="sep">/</span><span>about</span>
@@ -25,13 +25,22 @@ const lastUpdate = all.length
 
     <div class="profile">
       <div class="avatar" aria-hidden="true">S</div>
-      <div>
+      <div class="profile-body">
         <h2>{SITE.author}</h2>
-        <div class="contact-row">
-          <a href={`mailto:${SITE.email}`}>email</a>
-          <a href={SITE.github} target="_blank" rel="noopener noreferrer">github</a>
-          <a href="/rss.xml">rss</a>
-        </div>
+        <ul class="contact-list">
+          <li>
+            <span class="contact-label">email：</span>
+            <a href={`mailto:${SITE.email}`}>{SITE.email}</a>
+          </li>
+          <li>
+            <span class="contact-label">github：</span>
+            <a href={SITE.github} target="_blank" rel="noopener noreferrer">{SITE.github}</a>
+          </li>
+          <li>
+            <span class="contact-label">rss：</span>
+            <a href="/rss.xml">/rss.xml</a>
+          </li>
+        </ul>
       </div>
     </div>
 
