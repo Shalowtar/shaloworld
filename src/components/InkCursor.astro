@@ -24,7 +24,7 @@
 
     var INK = '148, 55, 38'; // 朱砂，与之前粒子同色
     var LIFE = 900; // 墨迹存活时长（毫秒）
-    var MAX_POINTS = 220;
+    var MAX_POINTS = 160;
     var SEG_STEP = 6; // 补点间距，越小笔迹越顺
 
     var dpr = Math.min(window.devicePixelRatio || 1, 1.5);
@@ -62,9 +62,6 @@
     // 自绘指针的位置状态
     var curX = 0;
     var curY = 0;
-    var tgtX = 0;
-    var tgtY = 0;
-    var caretPlaced = false;
     var caretVisible = false;
 
     function clamp(v, lo, hi) {
@@ -88,29 +85,15 @@
     }
 
     /**
-     * 摆放朱砂点：坐标夹在视口内，避免贴边时半边出界；
-     * 与上一点距离过大（指针刚回到窗口、或跨屏跳变）直接归位，不做缓动，否则会看到一条飞过去的残影。
+     * 摆放朱砂点：坐标夹在视口内避免半边出界；定位直接对齐指针，不做任何缓动，
+     * 保证和系统指针完全同速同行，拖尾感由下面的墨迹层负责。
      */
     function placeCaret(x, y) {
       var tx = clamp(x, 4, Math.max(4, W - 4));
       var ty = clamp(y, 4, Math.max(4, H - 4));
-      var jump = Math.abs(tx - curX) + Math.abs(ty - curY);
-      tgtX = tx;
-      tgtY = ty;
-      if (!caretPlaced || jump > 160) {
-        caretPlaced = true;
-        curX = tx;
-        curY = ty;
-        caret.style.transform = 'translate3d(' + tx + 'px,' + ty + 'px,0)';
-      }
-    }
-
-    function moveCaret() {
-      curX += (tgtX - curX) * 0.32;
-      curY += (tgtY - curY) * 0.32;
-      if (Math.abs(tgtX - curX) < 0.06) curX = tgtX;
-      if (Math.abs(tgtY - curY) < 0.06) curY = tgtY;
-      caret.style.transform = 'translate3d(' + curX.toFixed(2) + 'px,' + curY.toFixed(2) + 'px,0)';
+      curX = tx;
+      curY = ty;
+      caret.style.transform = 'translate3d(' + tx + 'px,' + ty + 'px,0)';
     }
 
     function showCaret() {
@@ -122,9 +105,7 @@
     function hideCaret() {
       caret.classList.remove('is-on');
       caret.classList.remove('is-hot');
-      if (!caretVisible) return;
       caretVisible = false;
-      caretPlaced = false; // 下次进入窗口直接对齐，不从旧位置追
     }
 
     /** 墨迹：逐段描线，越靠后越淡越细，形成自然渐变拖尾 */
@@ -285,11 +266,9 @@
       }
 
       render(now);
-      if (caretVisible) moveCaret();
 
       var headFading = now - lastHeadAt < 560;
-      var caretMoving = caretVisible && Math.abs(tgtX - curX) + Math.abs(tgtY - curY) > 0.4;
-      if (!pts.length && !hoverRect && !headFading && !caretMoving) {
+      if (!pts.length && !hoverRect && !headFading) {
         ctx.clearRect(0, 0, W, H);
         running = false;
         return;
@@ -401,8 +380,6 @@
 
         hoverEl = hitTest(e.target);
         updateHover();
-        // 立刻出一帧，指针移动时反馈不依赖下一帧
-        if (now - lastRender > 8) render(now);
         ensureLoop();
       },
       { passive: true }
@@ -463,7 +440,6 @@
 
     window.addEventListener('resize', function () {
       resize();
-      caretPlaced = false;
       pts.length = 0;
     });
   })();

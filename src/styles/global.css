@@ -90,6 +90,7 @@ html.has-ink-caret * {
   pointer-events: none;
   opacity: 0;
   transition: opacity 0.22s ease;
+  will-change: transform;
 }
 .ink-caret.is-on {
   opacity: 1;
