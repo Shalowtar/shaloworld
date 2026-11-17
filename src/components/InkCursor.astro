@@ -1,4 +1,8 @@
 <canvas class="ink-canvas" aria-hidden="true"></canvas>
+<div class="ink-caret" aria-hidden="true">
+  <span class="ink-caret-dot"></span>
+  <span class="ink-caret-label"></span>
+</div>
 
 <script is:inline>
   (function () {
@@ -10,6 +14,13 @@
     if (!canvas) return;
     var ctx = canvas.getContext('2d');
     if (!ctx) return;
+
+    var caret = document.querySelector('.ink-caret');
+    var caretLabel = caret && caret.querySelector('.ink-caret-label');
+    if (!caret || !caretLabel) return;
+
+    // 隐去系统指针，改由这枚朱砂点代替
+    document.documentElement.classList.add('has-ink-caret');
 
     var INK = '148, 55, 38'; // 朱砂，与之前粒子同色
     var LIFE = 900; // 墨迹存活时长（毫秒）
@@ -48,8 +59,72 @@
     var headY = 0;
     var lastRender = 0;
 
+    // 自绘指针的位置状态
+    var curX = 0;
+    var curY = 0;
+    var tgtX = 0;
+    var tgtY = 0;
+    var caretPlaced = false;
+    var caretVisible = false;
+
     function clamp(v, lo, hi) {
       return v < lo ? lo : v > hi ? hi : v;
+    }
+
+    /** 悬停时标签文案 */
+    function labelFor(target) {
+      if (!target || !target.closest) return '';
+      var el = target.closest('a, button, input, select, textarea, .chip');
+      if (!el) return '';
+      if (el.matches('input, textarea')) return '输入';
+      if (el.classList.contains('chip')) return '筛选';
+      if (el.matches('a')) {
+        var href = el.getAttribute('href') || '';
+        if (/^\/writeups\/[^/]+\/?$/.test(href)) return '阅读';
+        if (el.classList.contains('btn-primary')) return '开始';
+        return '查看';
+      }
+      return '查看';
+    }
+
+    /**
+     * 摆放朱砂点：坐标夹在视口内，避免贴边时半边出界；
+     * 与上一点距离过大（指针刚回到窗口、或跨屏跳变）直接归位，不做缓动，否则会看到一条飞过去的残影。
+     */
+    function placeCaret(x, y) {
+      var tx = clamp(x, 4, Math.max(4, W - 4));
+      var ty = clamp(y, 4, Math.max(4, H - 4));
+      var jump = Math.abs(tx - curX) + Math.abs(ty - curY);
+      tgtX = tx;
+      tgtY = ty;
+      if (!caretPlaced || jump > 160) {
+        caretPlaced = true;
+        curX = tx;
+        curY = ty;
+        caret.style.transform = 'translate3d(' + tx + 'px,' + ty + 'px,0)';
+      }
+    }
+
+    function moveCaret() {
+      curX += (tgtX - curX) * 0.32;
+      curY += (tgtY - curY) * 0.32;
+      if (Math.abs(tgtX - curX) < 0.06) curX = tgtX;
+      if (Math.abs(tgtY - curY) < 0.06) curY = tgtY;
+      caret.style.transform = 'translate3d(' + curX.toFixed(2) + 'px,' + curY.toFixed(2) + 'px,0)';
+    }
+
+    function showCaret() {
+      if (caretVisible) return;
+      caretVisible = true;
+      caret.classList.add('is-on');
+    }
+
+    function hideCaret() {
+      caret.classList.remove('is-on');
+      caret.classList.remove('is-hot');
+      if (!caretVisible) return;
+      caretVisible = false;
+      caretPlaced = false; // 下次进入窗口直接对齐，不从旧位置追
     }
 
     /** 墨迹：逐段描线，越靠后越淡越细，形成自然渐变拖尾 */
@@ -210,9 +285,11 @@
       }
 
       render(now);
+      if (caretVisible) moveCaret();
 
       var headFading = now - lastHeadAt < 560;
-      if (!pts.length && !hoverRect && !headFading) {
+      var caretMoving = caretVisible && Math.abs(tgtX - curX) + Math.abs(tgtY - curY) > 0.4;
+      if (!pts.length && !hoverRect && !headFading && !caretMoving) {
         ctx.clearRect(0, 0, W, H);
         running = false;
         return;
@@ -271,11 +348,12 @@
         var x = e.clientX;
         var y = e.clientY;
         var now = performance.now();
+        var inView = x >= 0 && y >= 0 && x <= W && y <= H;
 
         var last = pts[pts.length - 1];
-        if (!last) {
+        if (inView && !last) {
           pts.push({ x: x, y: y, t: now, v: 0.2 });
-        } else {
+        } else if (inView) {
           var mx = x - last.x;
           var my = y - last.y;
           var dist = Math.sqrt(mx * mx + my * my);
@@ -308,6 +386,19 @@
         headY = y;
         lastHeadAt = now;
 
+        // 自绘指针：贴边时夹在视口内，远跳直接归位
+        cancelHide();
+        showCaret();
+        placeCaret(x, y);
+
+        var label = labelFor(e.target);
+        if (label) {
+          caretLabel.textContent = label;
+          caret.classList.add('is-hot');
+        } else {
+          caret.classList.remove('is-hot');
+        }
+
         hoverEl = hitTest(e.target);
         updateHover();
         // 立刻出一帧，指针移动时反馈不依赖下一帧
@@ -323,11 +414,39 @@
       function (e) {
         if (e.target && e.target.tagName === 'IFRAME') {
           hoverEl = null;
+          hideCaret();
           if (hoverRect && !hoverLeaveAt) hoverLeaveAt = performance.now();
         }
       },
       true
     );
+
+    // 真离开窗口才隐藏，而且延迟一拍：
+    // 指针掠到窗口边缘、滚到滚动条上时浏览器会先发一次 pointerout(null)，
+    // 立刻隐藏就会闪一下再出现，看起来像点在边缘乱跳。留 400ms 缓冲，期间有任何事件都作废。
+    var hideTimer = 0;
+    function cancelHide() {
+      if (hideTimer) {
+        clearTimeout(hideTimer);
+        hideTimer = 0;
+      }
+    }
+    window.addEventListener('pointerout', function (e) {
+      if (e.relatedTarget !== null) return;
+      cancelHide();
+      hideTimer = setTimeout(function () {
+        hideTimer = 0;
+        hideCaret();
+      }, 400);
+    });
+    window.addEventListener('pointerenter', function () {
+      cancelHide();
+      showCaret();
+    });
+    window.addEventListener('blur', function () {
+      cancelHide();
+      hideCaret();
+    });
 
     document.addEventListener('mouseleave', function () {
       hoverEl = null;
@@ -344,6 +463,7 @@
 
     window.addEventListener('resize', function () {
       resize();
+      caretPlaced = false;
       pts.length = 0;
     });
   })();
