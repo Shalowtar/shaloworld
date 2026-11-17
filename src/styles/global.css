@@ -109,7 +109,8 @@ ol {
   opacity: 0;
 }
 .ink-rest::before,
-.ink-rest::after {
+.ink-rest::after,
+.ink-rest i {
   content: '';
   position: absolute;
   left: 0;
@@ -117,44 +118,72 @@ ol {
   border-radius: 50%;
   background: radial-gradient(
     circle,
-    rgba(148, 55, 38, 0.3) 0%,
-    rgba(148, 55, 38, 0.16) 42%,
-    rgba(148, 55, 38, 0) 72%
+    rgba(148, 55, 38, 0.32) 0%,
+    rgba(148, 55, 38, 0.22) 20%,
+    rgba(148, 55, 38, 0.12) 44%,
+    rgba(148, 55, 38, 0.05) 66%,
+    rgba(148, 55, 38, 0) 84%
   );
+  pointer-events: none;
 }
+/* 中心的湿墨芯：很慢地一起一伏，像笔尖还搁在纸上 */
 .ink-rest::before {
-  width: 10px;
-  height: 10px;
-  animation: ink-rest-breathe 2.8s ease-in-out infinite;
+  width: 13px;
+  height: 13px;
+  animation: ink-rest-breathe 3.7s ease-in-out infinite;
 }
+/* 两圈墨晕用不同周期和相位错开，叠起来就不会同步起落，看着像墨自己慢慢散 */
 .ink-rest::after {
-  width: 52px;
-  height: 52px;
+  width: 104px;
+  height: 104px;
   opacity: 0;
-  animation: ink-rest-spread 2.8s ease-out infinite;
+  animation: ink-rest-spread-a 4.4s cubic-bezier(0.16, 0.62, 0.34, 1) -1.3s infinite;
+}
+.ink-rest i {
+  display: block;
+  width: 78px;
+  height: 78px;
+  opacity: 0;
+  animation: ink-rest-spread-b 3.2s cubic-bezier(0.2, 0.68, 0.4, 1) -2.2s infinite;
 }
 @keyframes ink-rest-breathe {
   0%,
   100% {
     transform: translate(-50%, -50%) scale(1);
-    opacity: 0.9;
+    opacity: 0.86;
   }
-  50% {
-    transform: translate(-50%, -50%) scale(1.16);
-    opacity: 0.66;
+  46% {
+    transform: translate(-50%, -50%) scale(1.14, 1.08);
+    opacity: 0.7;
+  }
+  78% {
+    transform: translate(-50%, -50%) scale(1.04, 1.11);
+    opacity: 0.78;
   }
 }
-@keyframes ink-rest-spread {
+@keyframes ink-rest-spread-a {
   0% {
-    transform: translate(-50%, -50%) scale(0.24);
-    opacity: 0.42;
+    transform: translate(-50%, -50%) scale(0.3);
+    opacity: 0.26;
   }
-  62% {
-    transform: translate(-50%, -50%) scale(0.82);
-    opacity: 0.18;
+  38% {
+    opacity: 0.17;
   }
   100% {
     transform: translate(-50%, -50%) scale(1);
+    opacity: 0;
+  }
+}
+@keyframes ink-rest-spread-b {
+  0% {
+    transform: translate(-50%, -50%) scale(0.34);
+    opacity: 0.22;
+  }
+  45% {
+    opacity: 0.13;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1.06, 0.98);
     opacity: 0;
   }
 }

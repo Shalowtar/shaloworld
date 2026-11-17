@@ -1,6 +1,6 @@
 <canvas class="ink-canvas" aria-hidden="true"></canvas>
 <canvas class="ink-hover" aria-hidden="true"></canvas>
-<span class="ink-rest" aria-hidden="true"></span>
+<span class="ink-rest" aria-hidden="true"><i></i></span>
 
 <script is:inline>
   (function () {
@@ -17,9 +17,7 @@
     if (!tctx || !rctx) return;
 
     var INK = '148, 55, 38'; // 朱砂，与之前粒子同色
-    var DRY = 900; // 墨干的时间常数（毫秒）
-    var STEP = 2.5; // 盖墨点间距，越小笔迹越连贯
-    var IDLE_STOP = 2400; // 这么久没落墨就停掉动画循环
+    var STEP = 3; // 补点间距，越小笔迹越连贯
 
     var dpr = Math.min(window.devicePixelRatio || 1, 1.5);
     var W = 0;
@@ -72,17 +70,18 @@
       return s;
     }
     var trailDab = makeDab([
-      [0, 0.66],
-      [0.26, 0.44],
-      [0.52, 0.22],
-      [0.78, 0.07],
+      [0, 0.7],
+      [0.16, 0.52],
+      [0.36, 0.3],
+      [0.58, 0.14],
+      [0.8, 0.05],
       [1, 0],
     ]);
     var ringDab = makeDab([
-      [0, 0.9],
-      [0.24, 0.52],
-      [0.55, 0.18],
-      [0.82, 0.05],
+      [0, 0.86],
+      [0.2, 0.5],
+      [0.45, 0.22],
+      [0.7, 0.08],
       [1, 0],
     ]);
 
@@ -127,19 +126,21 @@
     }
 
     /**
-     * 尾迹：不再逐段描线（那样快速划动时线段的空当会露出来），
-     * 改为沿指针真实路径以 2.5px 间距连续盖墨点，墨与墨自然叠成一笔；
-     * 淡出交给整层按时间衰减，所以浓淡是连续过渡，不会一段一段地断。
+     * 尾迹：把指针路径记成一串点，每帧用墨点把它们重新叠出来 ——
+     * 墨点之间互相压着，所以不会像逐段描线那样露出空当；
+     * 每个点的浓淡和粗细按它的年龄算，指针处最浓，越往后越淡越细，最后化掉。
      */
+    var TRAIL_LIFE = 1600; // 尾迹从浓到化掉的总时长（毫秒）
     var lastX = null;
     var lastY = null;
     var lastAt = 0;
     var stampSpeed = 0.2;
     var lastStampAt = 0;
+    var pts = [];
 
-    function stamp(x, y, r, alpha) {
-      tctx.globalAlpha = alpha;
-      tctx.drawImage(trailDab, x - r, y - r, r * 2, r * 2);
+    function pushPoint(x, y, t, v) {
+      pts.push({ x: x, y: y, t: t, v: v });
+      while (pts.length > 300) pts.shift();
     }
 
     function inkTo(x, y, now) {
@@ -148,15 +149,14 @@
         lastY = y;
         lastAt = now;
         lastStampAt = now;
-        stamp(x, y, 3.4, 0.18);
-        tctx.globalAlpha = 1;
+        pushPoint(x, y, now, 0.3);
         return;
       }
 
       var dx = x - lastX;
       var dy = y - lastY;
       var dist = Math.sqrt(dx * dx + dy * dy);
-      if (dist < 0.5) {
+      if (dist < 0.7) {
         lastAt = now;
         return;
       }
@@ -164,17 +164,13 @@
       var dt = Math.max(1, now - lastAt);
       stampSpeed = stampSpeed * 0.55 + (dist / dt) * 0.45;
 
-      // 划得快时笔触略细，但浓度基本不减，保证快速甩动也看得出是一整笔
-      var r = clamp(4.6 - stampSpeed * 0.5, 3.4, 4.6);
-      var n = Math.min(700, Math.ceil(dist / STEP));
-      var a = clamp(0.34 - stampSpeed * 0.02, 0.3, 0.34);
-
+      // 补点：事件之间不管跨多远都按 3px 铺满，快速甩动也连成整笔
+      var n = Math.min(600, Math.ceil(dist / STEP));
       for (var i = 1; i <= n; i += 1) {
         var f = i / n;
-        stamp(lastX + dx * f, lastY + dy * f, r, a);
+        pushPoint(lastX + dx * f, lastY + dy * f, lastAt + dt * f, stampSpeed);
       }
 
-      tctx.globalAlpha = 1;
       lastX = x;
       lastY = y;
       lastAt = now;
@@ -186,17 +182,46 @@
       lastX = null;
       lastY = null;
       lastAt = 0;
+      pts.length = 0;
     }
 
-    /** 墨层按时间整体干去：先干的地方自然变淡，越新越浓 */
-    function fadeTrail(now) {
-      var dt = lastFrame ? Math.min(now - lastFrame, 1500) : 16;
-      var gone = 1 - Math.exp(-dt / DRY);
-      tctx.globalCompositeOperation = 'destination-out';
-      tctx.globalAlpha = gone;
-      tctx.fillStyle = '#000';
-      tctx.fillRect(0, 0, W, H);
-      tctx.globalCompositeOperation = 'source-over';
+    /** 逐点重绘尾迹：贴图半径比笔宽大一圈，让晕开的边缘自然叠在一起 */
+    function drawTrail(now) {
+      tctx.clearRect(0, 0, W, H);
+      if (!pts.length) return;
+
+      for (var i = 0; i < pts.length; i += 1) {
+        var p = pts[i];
+        var age = clamp((now - p.t) / TRAIL_LIFE, 0, 1);
+        var k = Math.pow(1 - age, 1.4); // 头部浓、尾部淡
+        if (k <= 0.02) continue;
+
+        // 笔宽随速度收、随年龄变细：尾巴自然收成一条细墨；贴图半径放大，让晕边互相压住
+        var hw = clamp(3.0 - p.v * 0.55, 1.9, 3.0) * (0.4 + 0.6 * k);
+        var r = hw * 2.6;
+
+        // 离指针越近越浓：鼠标脚下这一小段最深，越往后越淡
+        var prox = 1;
+        if (lastX !== null) {
+          var gx = p.x - lastX;
+          var gy = p.y - lastY;
+          prox = clamp(1 - Math.sqrt(gx * gx + gy * gy) / 150, 0, 1);
+        }
+        var a = 0.22 * k * (0.72 + 0.3 * prox);
+
+        tctx.globalAlpha = a;
+        tctx.drawImage(trailDab, p.x - r, p.y - r, r * 2, r * 2);
+      }
+
+      // 笔尖：指针正下方压一小团更深的湿墨
+      var headAge = clamp((now - lastStampAt) / 620, 0, 1);
+      var hk = Math.pow(1 - headAge, 1.5);
+      if (hk > 0.03) {
+        var hr = 10 * (0.7 + 0.3 * hk);
+        tctx.globalAlpha = 0.24 * hk;
+        tctx.drawImage(trailDab, (lastX === null ? 0 : lastX) - hr, (lastY === null ? 0 : lastY) - hr, hr * 2, hr * 2);
+      }
+
       tctx.globalAlpha = 1;
     }
 
@@ -253,11 +278,11 @@
 
       var len = hoverPoints.length;
       var t = (hoverLeaveAt || now) - hoverSince;
-      var phase = (t / 2100) % 1;
+      var phase = (t / 3400) % 1; // 绕一圈 3.4 秒，慢一点更稳
       if (phase < 0) phase += 1;
 
-      // 周长自适应：大致每 11px 一枚墨点，小标签也不会挤成一片
-      var N = Math.max(16, Math.min(56, Math.round(len / 2.8)));
+      // 周长自适应：大致每 13px 一枚墨点，小标签也不会挤成一片
+      var N = Math.max(14, Math.min(48, Math.round(len / 3.2)));
       var head = hoverDir > 0 ? phase : 1 - phase;
 
       for (var i = 0; i < N; i += 1) {
@@ -272,10 +297,10 @@
         var d = (f0 - head) % 1;
         if (d < 0) d += 1;
         var bump = Math.pow(0.5 + 0.5 * Math.cos(2 * Math.PI * d), 1.6);
-        var a = level * (0.22 + 0.2 * bump);
-        var r = 5.6 + 2 * bump;
+        var a = level * (0.18 + 0.16 * bump);
+        var r = 9 + 4 * bump; // 墨晕更大，向纸里洇得更开
 
-        rctx.globalAlpha = clamp(a * 0.92, 0, 1);
+        rctx.globalAlpha = clamp(a * 0.9, 0, 1);
         rctx.drawImage(ringDab, pt[0] - r, pt[1] - r, r * 2, r * 2);
       }
       rctx.globalAlpha = 1;
@@ -290,11 +315,14 @@
         hoverLeaveAt = 0;
       }
 
-      fadeTrail(now);
+      // 淘汰已经化掉的点
+      while (pts.length && now - pts[0].t > TRAIL_LIFE) pts.shift();
+
+      drawTrail(now);
       drawHover(now);
       lastFrame = now;
 
-      if (!hoverRect && now - lastStampAt > IDLE_STOP) {
+      if (!hoverRect && !pts.length) {
         tctx.clearRect(0, 0, W, H);
         rctx.clearRect(0, 0, W, H);
         lastFrame = 0;
