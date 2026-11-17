@@ -3,12 +3,9 @@
  * 改完标题/名字/链接后重新 `npm run build` 即可。
  */
 export const SITE = {
-  /** 站点名（报头、<title> 后缀、RSS 都用它） */
+  /** 站点名（报头、<title>、RSS 都用它） */
   title: 'Shaloworld',
-  /** 用于 <title> 后缀与 RSS */
-  tagline: '逆向 / CTF 解题记录',
-  description:
-    'Shalowtar 的 CTF Writeup 与逆向笔记：记录 Reverse 的解题过程、工具链和踩过的坑。',
+  description: 'Shalowtar 的小世界',
   author: 'Shalowtar',
   /** 部署后的正式域名，务必替换，影响 RSS 与 sitemap */
   url: 'https://shalowtar.com',
