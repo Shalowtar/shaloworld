@@ -76,7 +76,8 @@ ol {
 }
 
 /* ---------- 墨水光标 ---------- */
-.ink-canvas {
+.ink-canvas,
+.ink-hover {
   position: fixed;
   inset: 0;
   width: 100%;
@@ -159,6 +160,7 @@ ol {
 }
 @media (pointer: coarse), (prefers-reduced-motion: reduce) {
   .ink-canvas,
+  .ink-hover,
   .ink-rest {
     display: none;
   }

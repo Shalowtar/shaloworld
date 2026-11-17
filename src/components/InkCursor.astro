@@ -1,4 +1,5 @@
 <canvas class="ink-canvas" aria-hidden="true"></canvas>
+<canvas class="ink-hover" aria-hidden="true"></canvas>
 <span class="ink-rest" aria-hidden="true"></span>
 
 <script is:inline>
@@ -7,17 +8,18 @@
     var calm = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (!fine || calm) return;
 
-    var canvas = document.querySelector('.ink-canvas');
-    if (!canvas) return;
-    var ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
+    var trailCanvas = document.querySelector('.ink-canvas');
+    var ringCanvas = document.querySelector('.ink-hover');
     var rest = document.querySelector('.ink-rest');
+    if (!trailCanvas || !ringCanvas) return;
+    var tctx = trailCanvas.getContext('2d');
+    var rctx = ringCanvas.getContext('2d');
+    if (!tctx || !rctx) return;
 
     var INK = '148, 55, 38'; // 朱砂，与之前粒子同色
-    var LIFE = 900; // 墨迹存活时长（毫秒）
-    var MAX_POINTS = 160;
-    var SEG_STEP = 6; // 补点间距，越小笔迹越顺
+    var DRY = 900; // 墨干的时间常数（毫秒）
+    var STEP = 2.5; // 盖墨点间距，越小笔迹越连贯
+    var IDLE_STOP = 2400; // 这么久没落墨就停掉动画循环
 
     var dpr = Math.min(window.devicePixelRatio || 1, 1.5);
     var W = 0;
@@ -26,18 +28,20 @@
     function resize() {
       W = window.innerWidth;
       H = window.innerHeight;
-      canvas.width = Math.round(W * dpr);
-      canvas.height = Math.round(H * dpr);
-      canvas.style.width = W + 'px';
-      canvas.style.height = H + 'px';
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      ctx.lineCap = 'round';
-      ctx.lineJoin = 'round';
+      var list = [trailCanvas, ringCanvas];
+      for (var i = 0; i < list.length; i += 1) {
+        list[i].width = Math.round(W * dpr);
+        list[i].height = Math.round(H * dpr);
+        list[i].style.width = W + 'px';
+        list[i].style.height = H + 'px';
+      }
+      tctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      rctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     }
     resize();
 
-    var pts = []; // 最近经过的点：{x, y, t}
     var running = false;
+    var lastFrame = 0;
     var hoverEl = null;
     var hoverRect = null;
     var hoverPoints = [];
@@ -46,14 +50,41 @@
     var hoverSince = 0;
     var hoverLeaveAt = 0;
     var hoverKey = null;
-    var lastHeadAt = 0;
-    var headX = 0;
-    var headY = 0;
-    var lastRender = 0;
 
     function clamp(v, lo, hi) {
       return v < lo ? lo : v > hi ? hi : v;
     }
+
+    /** 预先烘焙墨点贴图：中心实、外圈一层层洇开 */
+    function makeDab(stops) {
+      var s = document.createElement('canvas');
+      s.width = 64;
+      s.height = 64;
+      var c = s.getContext('2d');
+      var g = c.createRadialGradient(32, 32, 0, 32, 32, 32);
+      for (var i = 0; i < stops.length; i += 1) {
+        g.addColorStop(stops[i][0], 'rgba(' + INK + ',' + stops[i][1] + ')');
+      }
+      c.fillStyle = g;
+      c.beginPath();
+      c.arc(32, 32, 32, 0, Math.PI * 2, false);
+      c.fill();
+      return s;
+    }
+    var trailDab = makeDab([
+      [0, 0.66],
+      [0.26, 0.44],
+      [0.52, 0.22],
+      [0.78, 0.07],
+      [1, 0],
+    ]);
+    var ringDab = makeDab([
+      [0, 0.9],
+      [0.24, 0.52],
+      [0.55, 0.18],
+      [0.82, 0.05],
+      [1, 0],
+    ]);
 
     // 静止时的墨：指针停下 240ms 后，落点那团湿墨开始呼吸（CSS 动画负责扩散，这里只管摆位和显隐）
     var idleTimer = 0;
@@ -95,50 +126,78 @@
       else rest.classList.remove('is-hot');
     }
 
-    /** 墨迹：逐段描线，越靠后越淡越细，形成自然渐变拖尾 */
-    function drawTrail(now) {
-      if (pts.length < 2) return;
+    /**
+     * 尾迹：不再逐段描线（那样快速划动时线段的空当会露出来），
+     * 改为沿指针真实路径以 2.5px 间距连续盖墨点，墨与墨自然叠成一笔；
+     * 淡出交给整层按时间衰减，所以浓淡是连续过渡，不会一段一段地断。
+     */
+    var lastX = null;
+    var lastY = null;
+    var lastAt = 0;
+    var stampSpeed = 0.2;
+    var lastStampAt = 0;
 
-      for (var i = 1; i < pts.length; i += 1) {
-        var p0 = pts[i - 1];
-        var p1 = pts[i];
-        var age = clamp((now - p1.t) / LIFE, 0, 1);
-        var k = Math.pow(1 - age, 1.5); // 头部浓、尾部淡
-        if (k <= 0.02) continue;
+    function stamp(x, y, r, alpha) {
+      tctx.globalAlpha = alpha;
+      tctx.drawImage(trailDab, x - r, y - r, r * 2, r * 2);
+    }
 
-        // 宽度只跟随平滑后的速度，避免相邻线段粗细跳变留下珠状断点
-        var thin = clamp(1.18 - p1.v * 0.55, 0.62, 1.12);
-
-        // 洇开的淡边
-        ctx.strokeStyle = 'rgba(' + INK + ',' + 0.075 * k + ')';
-        ctx.lineWidth = 13 * thin * (0.3 + 0.7 * k);
-        ctx.beginPath();
-        ctx.moveTo(p0.x, p0.y);
-        ctx.lineTo(p1.x, p1.y);
-        ctx.stroke();
-
-        // 主笔
-        ctx.strokeStyle = 'rgba(' + INK + ',' + 0.20 * k + ')';
-        ctx.lineWidth = 6.6 * thin * (0.3 + 0.7 * k);
-        ctx.beginPath();
-        ctx.moveTo(p0.x, p0.y);
-        ctx.lineTo(p1.x, p1.y);
-        ctx.stroke();
+    function inkTo(x, y, now) {
+      if (lastX === null) {
+        lastX = x;
+        lastY = y;
+        lastAt = now;
+        lastStampAt = now;
+        stamp(x, y, 3.4, 0.18);
+        tctx.globalAlpha = 1;
+        return;
       }
 
-      // 笔尖：刚移动过的地方留一小团湿墨，静止后自行淡去
-      var headAge = clamp((now - lastHeadAt) / 520, 0, 1);
-      var hk = Math.pow(1 - headAge, 1.4);
-      if (hk > 0.03) {
-        var g = ctx.createRadialGradient(headX, headY, 0, headX, headY, 9);
-        g.addColorStop(0, 'rgba(' + INK + ',' + 0.17 * hk + ')');
-        g.addColorStop(0.5, 'rgba(' + INK + ',' + 0.085 * hk + ')');
-        g.addColorStop(1, 'rgba(' + INK + ',0)');
-        ctx.fillStyle = g;
-        ctx.beginPath();
-        ctx.arc(headX, headY, 9, 0, Math.PI * 2, false);
-        ctx.fill();
+      var dx = x - lastX;
+      var dy = y - lastY;
+      var dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist < 0.5) {
+        lastAt = now;
+        return;
       }
+
+      var dt = Math.max(1, now - lastAt);
+      stampSpeed = stampSpeed * 0.55 + (dist / dt) * 0.45;
+
+      // 划得快时笔触略细，但浓度基本不减，保证快速甩动也看得出是一整笔
+      var r = clamp(4.6 - stampSpeed * 0.5, 3.4, 4.6);
+      var n = Math.min(700, Math.ceil(dist / STEP));
+      var a = clamp(0.34 - stampSpeed * 0.02, 0.3, 0.34);
+
+      for (var i = 1; i <= n; i += 1) {
+        var f = i / n;
+        stamp(lastX + dx * f, lastY + dy * f, r, a);
+      }
+
+      tctx.globalAlpha = 1;
+      lastX = x;
+      lastY = y;
+      lastAt = now;
+      lastStampAt = now;
+    }
+
+    // 指针离开窗口 / 跨进 iframe 时断开笔路，免得回来时画出一条横贯屏幕的直线
+    function liftPen() {
+      lastX = null;
+      lastY = null;
+      lastAt = 0;
+    }
+
+    /** 墨层按时间整体干去：先干的地方自然变淡，越新越浓 */
+    function fadeTrail(now) {
+      var dt = lastFrame ? Math.min(now - lastFrame, 1500) : 16;
+      var gone = 1 - Math.exp(-dt / DRY);
+      tctx.globalCompositeOperation = 'destination-out';
+      tctx.globalAlpha = gone;
+      tctx.fillStyle = '#000';
+      tctx.fillRect(0, 0, W, H);
+      tctx.globalCompositeOperation = 'source-over';
+      tctx.globalAlpha = 1;
     }
 
     /** 圆角矩形的轮廓采样点（顺时针，起点在左上角之后） */
@@ -182,30 +241,13 @@
       return clamp((now - hoverSince) / 240, 0, 1);
     }
 
-    // 预先烘焙一枚墨点贴图（中心实、外圈洇开），环绕时直接缩放贴图，避免每帧重建渐变
-    var dabSprite = (function () {
-      var s = document.createElement('canvas');
-      s.width = 64;
-      s.height = 64;
-      var c = s.getContext('2d');
-      var g = c.createRadialGradient(32, 32, 0, 32, 32, 32);
-      g.addColorStop(0, 'rgba(' + INK + ',0.9)');
-      g.addColorStop(0.24, 'rgba(' + INK + ',0.52)');
-      g.addColorStop(0.55, 'rgba(' + INK + ',0.18)');
-      g.addColorStop(0.82, 'rgba(' + INK + ',0.05)');
-      g.addColorStop(1, 'rgba(' + INK + ',0)');
-      c.fillStyle = g;
-      c.beginPath();
-      c.arc(32, 32, 32, 0, Math.PI * 2, false);
-      c.fill();
-      return s;
-    })();
-
     /**
      * 悬停：墨点沿目标描边围成一整圈，同时有一段更浓的“墨头”绕着走（方向随机）；
      * 每点都带墨晕，圈上疏密按周长自适应，绕一圈约 2.1 秒。
      */
     function drawHover(now) {
+      rctx.clearRect(0, 0, W, H);
+
       var level = hoverLevel(now);
       if (!hoverRect || level < 0.02 || !hoverPoints.length) return;
 
@@ -233,24 +275,14 @@
         var a = level * (0.22 + 0.2 * bump);
         var r = 5.6 + 2 * bump;
 
-        ctx.globalAlpha = clamp(a * 0.92, 0, 1);
-        ctx.drawImage(dabSprite, pt[0] - r, pt[1] - r, r * 2, r * 2);
+        rctx.globalAlpha = clamp(a * 0.92, 0, 1);
+        rctx.drawImage(ringDab, pt[0] - r, pt[1] - r, r * 2, r * 2);
       }
-      ctx.globalAlpha = 1;
-    }
-
-    function render(now) {
-      ctx.clearRect(0, 0, W, H);
-      drawHover(now);
-      drawTrail(now);
-      lastRender = now;
+      rctx.globalAlpha = 1;
     }
 
     function frame() {
       var now = performance.now();
-
-      // 淘汰过期的点
-      while (pts.length && now - pts[0].t > LIFE) pts.shift();
 
       // 围框淡出结束后清掉
       if (hoverRect && hoverLeaveAt && now - hoverLeaveAt > 360) {
@@ -258,11 +290,14 @@
         hoverLeaveAt = 0;
       }
 
-      render(now);
+      fadeTrail(now);
+      drawHover(now);
+      lastFrame = now;
 
-      var headFading = now - lastHeadAt < 560;
-      if (!pts.length && !hoverRect && !headFading) {
-        ctx.clearRect(0, 0, W, H);
+      if (!hoverRect && now - lastStampAt > IDLE_STOP) {
+        tctx.clearRect(0, 0, W, H);
+        rctx.clearRect(0, 0, W, H);
+        lastFrame = 0;
         running = false;
         return;
       }
@@ -272,6 +307,7 @@
     function ensureLoop() {
       if (running) return;
       running = true;
+      lastFrame = 0;
       requestAnimationFrame(frame);
     }
 
@@ -320,43 +356,8 @@
         var x = e.clientX;
         var y = e.clientY;
         var now = performance.now();
-        var inView = x >= 0 && y >= 0 && x <= W && y <= H;
 
-        var last = pts[pts.length - 1];
-        if (inView && !last) {
-          pts.push({ x: x, y: y, t: now, v: 0.2 });
-        } else if (inView) {
-          var mx = x - last.x;
-          var my = y - last.y;
-          var dist = Math.sqrt(mx * mx + my * my);
-          var dt = Math.max(1, now - last.t);
-          // 速度做平滑，避免线段宽度忽粗忽细
-          var speed = last.v * 0.6 + (dist / dt) * 0.4;
-
-          if (dist > SEG_STEP) {
-            // 指针快速甩动时两次事件之间距离很大，这里补插中间点，笔迹才不会断成一段段
-            var n = Math.min(48, Math.ceil(dist / SEG_STEP));
-            for (var s = 1; s <= n; s += 1) {
-              var f = s / n;
-              pts.push({
-                x: last.x + mx * f,
-                y: last.y + my * f,
-                t: last.t + dt * f,
-                v: speed,
-              });
-            }
-          } else if (dist > 2) {
-            pts.push({ x: x, y: y, t: now, v: speed });
-          } else {
-            last.t = now;
-            last.v = speed;
-          }
-          while (pts.length > MAX_POINTS) pts.shift();
-        }
-
-        headX = x;
-        headY = y;
-        lastHeadAt = now;
+        if (x >= 0 && y >= 0 && x <= W && y <= H) inkTo(x, y, now);
 
         placeRest(x, y);
         restWake();
@@ -370,12 +371,13 @@
       { passive: true }
     );
 
-    // 移到内嵌 PDF / iframe 上时父页面收不到 mousemove，墨迹自行淡去
+    // 移到内嵌 PDF / iframe 上时父页面收不到 mousemove，笔路断开、墨迹自行淡去
     document.addEventListener(
       'mouseover',
       function (e) {
         if (e.target && e.target.tagName === 'IFRAME') {
           hoverEl = null;
+          liftPen();
           restHide();
           if (hoverRect && !hoverLeaveAt) hoverLeaveAt = performance.now();
         }
@@ -385,6 +387,7 @@
 
     document.addEventListener('mouseleave', function () {
       hoverEl = null;
+      liftPen();
       restHide();
       if (hoverRect && !hoverLeaveAt) hoverLeaveAt = performance.now();
     });
@@ -397,12 +400,15 @@
       { passive: true }
     );
 
-    // 切走窗口（Alt+Tab、点其它应用）时把落点的墨收掉，回来后重新落一次
-    window.addEventListener('blur', restHide);
+    // 切走窗口（Alt+Tab、点其它应用）时断开笔路，并把落点的墨收掉
+    window.addEventListener('blur', function () {
+      liftPen();
+      restHide();
+    });
 
     window.addEventListener('resize', function () {
       resize();
-      pts.length = 0;
+      liftPen();
     });
   })();
 </script>
