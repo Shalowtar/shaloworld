@@ -318,18 +318,24 @@
       var len = hoverPoints.length;
       var L = hoverLen;
       var t = (hoverLeaveAt || now) - hoverSince;
-      var travelled = hoverStart + hoverDir * (t / 1000) * RING_SPEED;
+      var run = (t / 1000) * RING_SPEED; // 墨头自起笔以来走过多远
+      var travelled = hoverStart + hoverDir * run;
       travelled = ((travelled % L) + L) % L;
 
       var TAIL = L * 0.9; // 墨尾绕满几乎整圈，只在墨头前方留一小段空当
+      // 墨尾是这一笔“带出来"的：起笔时没有尾巴，走到哪尾巴才长到哪
+      var tailNow = Math.min(TAIL, run);
+      if (tailNow < 1.5) tailNow = 1.5;
+
       var STEP_D = 2.5;
-      var count = Math.max(2, Math.round(TAIL / STEP_D));
+      var count = Math.max(1, Math.round(tailNow / STEP_D));
       var cx = hoverRect.left + hoverRect.width / 2;
       var cy = hoverRect.top + hoverRect.height / 2;
 
       for (var i = 0; i <= count; i += 1) {
         var d = i * STEP_D;
-        var w = d / TAIL; // 0 = 墨头，1 = 墨尾末端
+        if (d > tailNow) d = tailNow;
+        var w = d / tailNow; // 0 = 墨头，1 = 墨尾末端
         if (w >= 0.99) continue;
         var k = Math.pow(1 - w, 0.6); // 收得很缓，尾段才不会提前消失
 
