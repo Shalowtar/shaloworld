@@ -57,6 +57,12 @@ svg {
   max-width: 100%;
   display: block;
 }
+/* 主区域撑满视口，短页面也能把页脚压到最底部 */
+main {
+  flex: 1 0 auto;
+  display: flex;
+  flex-direction: column;
+}
 a {
   color: inherit;
   text-decoration: none;
@@ -697,7 +703,8 @@ body {
   border-bottom: 1px solid var(--rule);
 }
 .stats-about {
-  margin: 88px 0 0;
+  margin: auto 0 0;
+  border-bottom: 0; /* 底线交给页脚那条，视觉上合成一条 */
 }
 .stats-about .stat {
   gap: 8px;
@@ -1485,13 +1492,19 @@ body {
   padding-top: 34px;
 }
 .profile {
-  display: flex;
-  gap: 26px;
-  align-items: flex-start;
-  padding: 2px 0 46px;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  column-gap: 26px;
+  padding: 8px 0 30px;
   border-bottom: 1px solid var(--rule);
 }
 /* 关于页：标题下的粗线更贴近标题 */
+.about-page {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
 .about-page .article-top {
   padding: 54px 0 16px;
 }
@@ -1530,20 +1543,20 @@ body {
   min-width: 0;
 }
 .contact-list {
-  display: grid;
-  gap: 8px;
-  margin: 12px 0 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 36px;
+  margin: 0;
   padding: 0;
   list-style: none;
 }
 .contact-list li {
-  display: flex;
-  flex-wrap: wrap;
+  display: inline-flex;
   align-items: baseline;
   font-family: var(--font-ui);
   font-size: 0.76rem;
   letter-spacing: 0.06em;
-  line-height: 1.6;
+  line-height: 1.9;
 }
 .contact-label {
   color: var(--ink-soft);
