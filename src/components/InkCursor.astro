@@ -11,8 +11,11 @@
     var ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    var INK = '148, 55, 38'; // var(--accent)
-    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+    var INK = '148, 55, 38'; // 朱砂，与之前粒子同色
+    var LIFE = 860; // 墨迹存活时长（毫秒）
+    var MAX_POINTS = 90;
+
+    var dpr = Math.min(window.devicePixelRatio || 1, 1.5);
     var W = 0;
     var H = 0;
 
@@ -24,77 +27,146 @@
       canvas.style.width = W + 'px';
       canvas.style.height = H + 'px';
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
     }
     resize();
 
-    var lastX = null;
-    var lastY = null;
-    var lastStamp = 0;
+    var pts = []; // 最近经过的点：{x, y, t}
     var running = false;
-    var hoverRect = null;
     var hoverEl = null;
+    var hoverRect = null;
+    var hoverSince = 0;
+    var hoverLeaveAt = 0;
+    var hoverKey = null;
+    var lastHeadAt = 0;
+    var headX = 0;
+    var headY = 0;
+    var lastRender = 0;
 
-    /** 一枚软边墨点 */
-    function stamp(x, y, r, a) {
-      var g = ctx.createRadialGradient(x, y, 0, x, y, r);
-      g.addColorStop(0, 'rgba(' + INK + ',' + a + ')');
-      g.addColorStop(0.45, 'rgba(' + INK + ',' + a * 0.55 + ')');
-      g.addColorStop(1, 'rgba(' + INK + ',0)');
-      ctx.fillStyle = g;
-      ctx.beginPath();
-      ctx.arc(x, y, r, 0, Math.PI * 2, false);
-      ctx.fill();
+    function clamp(v, lo, hi) {
+      return v < lo ? lo : v > hi ? hi : v;
     }
 
-    /** 沿目标轮廓描一圈墨线 */
-    function inkRect(rect, alpha, width) {
-      var x = rect.left;
-      var y = rect.top;
-      var w = rect.width;
-      var h = rect.height;
-      var r = 13;
+    /** 墨迹：逐段描线，越靠后越淡越细，形成自然渐变拖尾 */
+    function drawTrail(now) {
+      if (pts.length < 2) return;
+
+      for (var i = 1; i < pts.length; i += 1) {
+        var p0 = pts[i - 1];
+        var p1 = pts[i];
+        var age = clamp((now - p1.t) / LIFE, 0, 1);
+        var k = Math.pow(1 - age, 1.5); // 头部浓、尾部淡
+        if (k <= 0.02) continue;
+
+        var seg = Math.sqrt((p1.x - p0.x) * (p1.x - p0.x) + (p1.y - p0.y) * (p1.y - p0.y));
+        var thin = clamp(1.15 - seg / 90, 0.55, 1.15); // 快挥更细，慢拖更粗
+
+        // 洇开的淡边
+        ctx.strokeStyle = 'rgba(' + INK + ',' + 0.075 * k + ')';
+        ctx.lineWidth = 13 * thin * (0.3 + 0.7 * k);
+        ctx.beginPath();
+        ctx.moveTo(p0.x, p0.y);
+        ctx.lineTo(p1.x, p1.y);
+        ctx.stroke();
+
+        // 主笔
+        ctx.strokeStyle = 'rgba(' + INK + ',' + 0.20 * k + ')';
+        ctx.lineWidth = 6.6 * thin * (0.3 + 0.7 * k);
+        ctx.beginPath();
+        ctx.moveTo(p0.x, p0.y);
+        ctx.lineTo(p1.x, p1.y);
+        ctx.stroke();
+      }
+
+      // 笔尖：刚移动过的地方留一小团湿墨，静止后自行淡去
+      var headAge = clamp((now - lastHeadAt) / 520, 0, 1);
+      var hk = Math.pow(1 - headAge, 1.4);
+      if (hk > 0.03) {
+        var g = ctx.createRadialGradient(headX, headY, 0, headX, headY, 9);
+        g.addColorStop(0, 'rgba(' + INK + ',' + 0.17 * hk + ')');
+        g.addColorStop(0.5, 'rgba(' + INK + ',' + 0.085 * hk + ')');
+        g.addColorStop(1, 'rgba(' + INK + ',0)');
+        ctx.fillStyle = g;
+        ctx.beginPath();
+        ctx.arc(headX, headY, 9, 0, Math.PI * 2, false);
+        ctx.fill();
+      }
+    }
+
+    function roundRectPath(x, y, w, h, r) {
       ctx.beginPath();
       if (ctx.roundRect) {
         ctx.roundRect(x, y, w, h, r);
-      } else {
-        ctx.moveTo(x + r, y);
-        ctx.arcTo(x + w, y, x + w, y + h, r);
-        ctx.arcTo(x + w, y + h, x, y + h, r);
-        ctx.arcTo(x, y + h, x, y, r);
-        ctx.arcTo(x, y, x + w, y, r);
-        ctx.closePath();
+        return;
       }
-      ctx.lineWidth = width;
-      ctx.strokeStyle = 'rgba(' + INK + ',' + alpha + ')';
-      ctx.shadowColor = 'rgba(' + INK + ',' + alpha * 1.6 + ')';
-      ctx.shadowBlur = 3;
+      ctx.moveTo(x + r, y);
+      ctx.arcTo(x + w, y, x + w, y + h, r);
+      ctx.arcTo(x + w, y + h, x, y + h, r);
+      ctx.arcTo(x, y + h, x, y, r);
+      ctx.arcTo(x, y, x + w, y, r);
+      ctx.closePath();
+    }
+
+    /** 围框：几层柔笔叠出来的墨圈，边缘带洇墨 */
+    function drawHover(level) {
+      if (!hoverRect || level < 0.02) return;
+      var r = hoverRect;
+      var a = level;
+
+      ctx.shadowColor = 'rgba(' + INK + ',' + 0.30 * a + ')';
+      ctx.shadowBlur = 9;
+
+      // 外层洇墨
+      roundRectPath(r.left, r.top, r.width, r.height, 14);
+      ctx.strokeStyle = 'rgba(' + INK + ',' + 0.07 * a + ')';
+      ctx.lineWidth = 9;
       ctx.stroke();
+
+      // 主笔
+      roundRectPath(r.left, r.top, r.width, r.height, 14);
+      ctx.strokeStyle = 'rgba(' + INK + ',' + 0.19 * a + ')';
+      ctx.lineWidth = 2.6;
+      ctx.stroke();
+
       ctx.shadowBlur = 0;
     }
 
-    function hitTest(target) {
-      if (!target || !target.closest) return null;
-      return target.closest('a, button, input, select, textarea, .chip, .flag-btn, .lightbox');
+    /** 围框的浓淡：出现时淡入，离开后淡出 */
+    function hoverLevel(now) {
+      if (!hoverRect) return 0;
+      if (hoverLeaveAt) return clamp(1 - (now - hoverLeaveAt) / 340, 0, 1);
+      return clamp((now - hoverSince) / 240, 0, 1);
     }
 
-    function updateHoverRect() {
-      if (!hoverEl) {
+    function render(now) {
+      ctx.clearRect(0, 0, W, H);
+      drawHover(hoverLevel(now));
+      drawTrail(now);
+      lastRender = now;
+    }
+
+    function frame() {
+      var now = performance.now();
+
+      // 淘汰过期的点
+      while (pts.length && now - pts[0].t > LIFE) pts.shift();
+
+      // 围框淡出结束后清掉
+      if (hoverRect && hoverLeaveAt && now - hoverLeaveAt > 360) {
         hoverRect = null;
+        hoverLeaveAt = 0;
+      }
+
+      render(now);
+
+      var headFading = now - lastHeadAt < 560;
+      if (!pts.length && !hoverRect && !headFading) {
+        ctx.clearRect(0, 0, W, H);
+        running = false;
         return;
       }
-      var r = hoverEl.getBoundingClientRect();
-      if (r.width > 320 || r.height > 120 || r.width * r.height > 34000) {
-        hoverRect = null;
-        return;
-      }
-      hoverRect = {
-        left: r.left - 7,
-        top: r.top - 7,
-        right: r.right + 7,
-        bottom: r.bottom + 7,
-        width: r.width + 14,
-        height: r.height + 14,
-      };
+      requestAnimationFrame(frame);
     }
 
     function ensureLoop() {
@@ -103,27 +175,35 @@
       requestAnimationFrame(frame);
     }
 
-    function frame() {
-      var now = performance.now();
-      var idle = now - lastStamp;
-      var hovering = !!hoverRect;
+    function hitTest(target) {
+      if (!target || !target.closest) return null;
+      return target.closest('a, button, input, select, textarea, .chip, .flag-btn, .lightbox');
+    }
 
-      // 用 destination-out 缓慢擦除，模拟墨迹干涸
-      ctx.globalCompositeOperation = 'destination-out';
-      ctx.fillStyle = 'rgba(0, 0, 0,' + (idle > 420 ? 0.085 : 0.03) + ')';
-      ctx.fillRect(0, 0, W, H);
-      ctx.globalCompositeOperation = 'source-over';
-
-      if (hovering) {
-        inkRect(hoverRect, 0.035, 2);
-      }
-
-      if (!hovering && idle > 1400) {
-        ctx.clearRect(0, 0, W, H);
-        running = false;
+    function updateHover() {
+      if (!hoverEl) {
+        if (hoverRect && !hoverLeaveAt) hoverLeaveAt = performance.now();
         return;
       }
-      requestAnimationFrame(frame);
+      var r = hoverEl.getBoundingClientRect();
+      if (r.width > 320 || r.height > 120 || r.width * r.height > 34000) {
+        hoverEl = null;
+        if (hoverRect && !hoverLeaveAt) hoverLeaveAt = performance.now();
+        return;
+      }
+      hoverRect = {
+        left: r.left - 8,
+        top: r.top - 8,
+        width: r.width + 16,
+        height: r.height + 16,
+      };
+      if (hoverKey !== hoverEl) {
+        hoverKey = hoverEl;
+        hoverSince = performance.now();
+        hoverLeaveAt = 0;
+      } else {
+        hoverLeaveAt = 0;
+      }
     }
 
     document.addEventListener(
@@ -131,79 +211,57 @@
       function (e) {
         var x = e.clientX;
         var y = e.clientY;
+        var now = performance.now();
 
-        if (lastX === null) {
-          lastX = x;
-          lastY = y;
+        var last = pts[pts.length - 1];
+        if (!last || Math.abs(x - last.x) + Math.abs(y - last.y) > 1.5) {
+          pts.push({ x: x, y: y, t: now });
+          if (pts.length > MAX_POINTS) pts.shift();
+        } else {
+          last.t = now;
         }
 
-        // 在两点之间按固定步长补点，快速甩动时线条不会断成珠
-        var dx = x - lastX;
-        var dy = y - lastY;
-        var dist = Math.sqrt(dx * dx + dy * dy);
-        var stepSize = 3.5;
-        var steps = Math.min(48, Math.max(1, Math.round(dist / stepSize)));
-
-        for (var s = 1; s <= steps; s += 1) {
-          var t = s / steps;
-          var px = lastX + dx * t;
-          var py = lastY + dy * t;
-          // 慢速时墨点更大更浓，快速时更细更淡
-          var radius = 4.6 + Math.min(4, 14 / (dist + 6));
-          var alpha = 0.05 + Math.min(0.05, 4 / (dist + 24));
-          stamp(px, py, radius, alpha);
-        }
-
-        lastX = x;
-        lastY = y;
-        lastStamp = performance.now();
+        headX = x;
+        headY = y;
+        lastHeadAt = now;
 
         hoverEl = hitTest(e.target);
-        updateHoverRect();
-        if (hoverRect) {
-          // 悬停时立刻沿目标轮廓落一圈墨，随后由动画帧继续加深
-          inkRect(hoverRect, 0.06, 2);
-        }
+        updateHover();
+        // 立刻出一帧，指针移动时反馈不依赖下一帧
+        if (now - lastRender > 8) render(now);
         ensureLoop();
       },
       { passive: true }
     );
 
-    document.addEventListener(
-      'mousedown',
-      function (e) {
-        stamp(e.clientX, e.clientY, 12, 0.14);
-        lastStamp = performance.now();
-        ensureLoop();
-      },
-      { passive: true }
-    );
-
-    // 移到内嵌 PDF / iframe 时父页面收不到 mousemove，墨迹自然干涸
+    // 移到内嵌 PDF / iframe 上时父页面收不到 mousemove，墨迹自行淡去
     document.addEventListener(
       'mouseover',
       function (e) {
         if (e.target && e.target.tagName === 'IFRAME') {
           hoverEl = null;
-          hoverRect = null;
-          lastStamp = performance.now() - 300;
+          if (hoverRect && !hoverLeaveAt) hoverLeaveAt = performance.now();
         }
       },
       true
     );
 
-    window.addEventListener('scroll', updateHoverRect, { passive: true });
-
     document.addEventListener('mouseleave', function () {
       hoverEl = null;
-      hoverRect = null;
-      lastStamp = performance.now() - 300;
+      if (hoverRect && !hoverLeaveAt) hoverLeaveAt = performance.now();
     });
+
+    window.addEventListener(
+      'scroll',
+      function () {
+        if (hoverEl) updateHover();
+      },
+      { passive: true }
+    );
 
     window.addEventListener('resize', function () {
       resize();
-      lastX = null;
-      lastY = null;
+      pts.length = 0;
     });
   })();
 </script>
