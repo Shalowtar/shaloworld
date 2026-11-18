@@ -242,6 +242,57 @@ const articleSchema = {
     const article = document.getElementById('article');
     if (!article) return;
 
+    /* ---------- 首词点题：第一段第一个词标红略放大 ---------- */
+    (function markLedeWord() {
+      const firstP = Array.prototype.find.call(article.children, function (el) {
+        return el.tagName === 'P';
+      });
+      if (!firstP) return;
+
+      const walker = document.createTreeWalker(firstP, NodeFilter.SHOW_TEXT);
+      let node = walker.nextNode();
+      while (node && !node.nodeValue.trim()) node = walker.nextNode();
+      if (!node) return;
+
+      const raw = node.nodeValue;
+      const lead = raw.length - raw.replace(/^\s+/, '').length;
+      const rest = raw.slice(lead);
+      if (!rest) return;
+
+      let len = 0;
+      try {
+        if (window.Intl && Intl.Segmenter) {
+          const words = [];
+          for (const s of new Intl.Segmenter('zh', { granularity: 'word' }).segment(rest)) {
+            if (s.isWordLike) words.push(s.segment);
+          }
+          let word = words[0] || '';
+          /* “这 / 一周”“第 / 一次”这类被切碎的词，往后并一格再标 */
+          if (word.length === 1 && words[1] && word.length + words[1].length <= 4) {
+            word += words[1];
+          } else if (/^第[一二三四五六七八九十百千0-9]+$/.test(word) && words[1] && words[1].length <= 2) {
+            word += words[1];
+          }
+          len = word.length;
+        }
+      } catch (e) {}
+      if (!len) {
+        const m = rest.match(/^[\p{L}\p{N}_]+/u);
+        len = m ? m[0].length : Math.min(2, rest.length);
+      }
+      if (!len) return;
+
+      const range = document.createRange();
+      range.setStart(node, lead);
+      range.setEnd(node, lead + len);
+
+      const span = document.createElement('span');
+      span.className = 'lede-word';
+      try {
+        range.surroundContents(span);
+      } catch (e) {}
+    })();
+
     /* ---------- 代码块复制 ---------- */
     article.querySelectorAll('pre').forEach(function (pre) {
       if (pre.closest('.flag-box')) return;

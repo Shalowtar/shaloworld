@@ -1125,13 +1125,11 @@ html[data-toc="off"] .toc-fab {
   margin: 0 0 1.25em;
   text-align: justify;
 }
-/* 首字下沉：杂志感，只作用于文章正文第一段 */
-.article-grid .prose > p:first-of-type::first-letter {
-  float: left;
-  margin: 0.06em 0.1em 0 0;
+/* 首词点题：第一段的第一个词标红、略放大，不再做整字下沉 */
+.article-grid .prose > p:first-of-type .lede-word {
   font-family: var(--font-display);
-  font-size: 3.3em;
-  line-height: 0.85;
+  font-size: 1.26em;
+  letter-spacing: 0.01em;
   color: var(--accent);
 }
 .prose h2 {
