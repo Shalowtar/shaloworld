@@ -1,7 +1,7 @@
 ---
 title: 'C 语言学习一 · 九九乘法表'
 summary: '两层 for 循环打印九九乘法表，练的是嵌套循环、变量作用域和 printf 的格式化输出。'
-category: Misc
+category: C
 tags: ['C语言学习']
 publishedAt: 2026-11-18T10:00:00+08:00
 ---

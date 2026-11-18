@@ -366,6 +366,9 @@ ol {
 .badge[data-cat="IoT"] {
   color: #2f6070;
 }
+.badge[data-cat="C"] {
+  color: #6d4c3d;
+}
 .badge[data-diff="Easy"] {
   color: #35544a;
 }
@@ -625,6 +628,9 @@ body {
 }
 .entry-kicker .k-cat[data-cat="IoT"] {
   color: #2f6070;
+}
+.entry-kicker .k-cat[data-cat="C"] {
+  color: #6d4c3d;
 }
 .entry-kicker .k-sep {
   color: var(--rule);

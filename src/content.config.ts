@@ -14,7 +14,7 @@ const writeups = defineCollection({
     summary: z.string(),
     /** 赛事名，例如 ISCTF 2026；没有可省 */
     event: z.string().optional(),
-    category: z.enum(['Reverse', 'Pwn', 'Crypto', 'Web', 'Misc', 'IoT']),
+    category: z.enum(['Reverse', 'Pwn', 'Crypto', 'Web', 'Misc', 'IoT', 'C']),
     difficulty: z.enum(['Easy', 'Medium', 'Hard', 'Insane']).optional(),
     tags: z.array(z.string()).default([]),
     publishedAt: z.coerce.date(),
