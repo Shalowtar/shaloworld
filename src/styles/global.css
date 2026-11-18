@@ -890,8 +890,8 @@ body {
 /* ---------- 正文 + 目录 ---------- */
 .article-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 210px;
-  gap: 56px;
+  grid-template-columns: minmax(0, 1fr) 232px;
+  gap: 48px;
   padding: 40px 0 0;
   transition: grid-template-columns 0.34s cubic-bezier(0.4, 0, 0.2, 1), gap 0.34s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -974,11 +974,30 @@ html[data-toc="off"] .toc {
   color: var(--accent);
   border-left-color: var(--accent);
 }
-/* 大节：单击展开下面的小节，双击直接跳过去 */
+/* 大节：这里是文章名，单击展开章节书签，双击打开文章 */
 .toc .toc-h2 {
   display: flex;
   align-items: baseline;
   gap: 8px;
+  font-family: var(--font-display);
+  font-size: 0.84rem;
+  line-height: 1.5;
+  letter-spacing: 0.01em;
+  color: var(--ink-strong);
+}
+.toc .toc-post {
+  margin-bottom: 10px;
+}
+.toc .toc-post + .toc-post {
+  padding-top: 10px;
+  border-top: 1px solid var(--rule-soft);
+}
+/* 正在读的这篇，文章名用朱砂色标出来 */
+.toc .toc-post[data-current="true"] .toc-h2 {
+  color: var(--accent);
+}
+.toc .toc-h2:hover {
+  color: var(--accent);
 }
 .toc .toc-h2 .toc-text {
   flex: 1 1 auto;
@@ -1013,6 +1032,11 @@ html[data-toc="off"] .toc {
   padding-left: 10px;
   font-size: 0.74rem;
   opacity: 0.9;
+}
+.toc .toc-sub li.is-deep a {
+  padding-left: 20px;
+  font-size: 0.71rem;
+  opacity: 0.82;
 }
 .toc .toc-sub a:hover,
 .toc .toc-sub a.active {

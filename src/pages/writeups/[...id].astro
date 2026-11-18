@@ -28,16 +28,24 @@ const prev = index > 0 ? all[index - 1] : null;
 const next = index >= 0 && index < all.length - 1 ? all[index + 1] : null;
 const related = relatedPosts(post, all, 3);
 
-const toc = headings.filter((h) => h.depth === 2 || h.depth === 3);
-/** 目录按大节（h2）归组，小节（h3）收在下面，点开才展开 */
-const tocGroups: { heading: (typeof toc)[number] | null; children: typeof toc }[] = [];
-for (const h of toc) {
-  if (h.depth === 2) {
-    tocGroups.push({ heading: h, children: [] });
-  } else if (h.depth === 3) {
-    if (tocGroups.length === 0) tocGroups.push({ heading: null, children: [] });
-    tocGroups[tocGroups.length - 1].children.push(h);
-  }
+/** 学习目录：列出全部文章，每篇下面收着自己的章节书签 */
+const outlines: {
+  id: string;
+  title: string;
+  current: boolean;
+  headings: { depth: number; slug: string; text: string }[];
+}[] = [];
+for (const p of all) {
+  const outline =
+    p.id === post.id
+      ? headings
+      : (await render(p)).headings;
+  outlines.push({
+    id: p.id,
+    title: p.data.title,
+    current: p.id === post.id,
+    headings: outline.filter((h) => h.depth === 2 || h.depth === 3),
+  });
 }
 const minutes = readingTime(post.body);
 const description = data.summary;
@@ -127,41 +135,40 @@ const articleSchema = {
       </article>
 
       {
-        toc.length > 0 && (
+        outlines.length > 0 && (
           <>
-            <aside class="toc" id="toc" aria-label="目录">
+            <aside class="toc" id="toc" aria-label="学习目录">
               <div class="toc-head">
-                <span class="toc-title">目 录</span>
+                <span class="toc-title">学习目录</span>
                 <button class="toc-collapse" id="toc-collapse" type="button" aria-label="收起目录" aria-expanded="true">
                   收起
                 </button>
               </div>
               <ul class="toc-list">
-                {tocGroups.map((g, i) => (
-                  <li class="toc-group">
-                    {g.heading &&
-                      (g.children.length > 0 ? (
-                        <a
-                          class="toc-h2 has-sub"
-                          href={`#${g.heading.slug}`}
-                          data-sub={i}
-                          aria-expanded="false"
-                        >
-                          <span class="toc-text">{g.heading.text}</span>
-                          <span class="toc-caret" aria-hidden="true">
-                            ›
-                          </span>
-                        </a>
-                      ) : (
-                        <a class="toc-h2" href={`#${g.heading.slug}`}>
-                          {g.heading.text}
-                        </a>
-                      ))}
-                    {g.children.length > 0 && (
-                      <ul class="toc-sub" id={`toc-sub-${i}`} hidden={g.heading !== null}>
-                        {g.children.map((c) => (
-                          <li>
-                            <a href={`#${c.slug}`}>{c.text}</a>
+                {outlines.map((o, oi) => (
+                  <li class="toc-post" data-current={o.current ? 'true' : 'false'}>
+                    {o.headings.length > 0 ? (
+                      <a
+                        class="toc-h2 has-sub"
+                        href={o.current ? '#top' : `/writeups/${o.id}/`}
+                        data-sub={`post-${oi}`}
+                        aria-expanded="false"
+                      >
+                        <span class="toc-text">{o.title}</span>
+                        <span class="toc-caret" aria-hidden="true">
+                          ›
+                        </span>
+                      </a>
+                    ) : (
+                      <a class="toc-h2" href={o.current ? '#top' : `/writeups/${o.id}/`}>
+                        <span class="toc-text">{o.title}</span>
+                      </a>
+                    )}
+                    {o.headings.length > 0 && (
+                      <ul class="toc-sub" id={`toc-sub-post-${oi}`} hidden>
+                        {o.headings.map((h) => (
+                          <li class={h.depth === 3 ? 'is-deep' : ''}>
+                            <a href={o.current ? `#${h.slug}` : `/writeups/${o.id}/#${h.slug}`}>{h.text}</a>
                           </li>
                         ))}
                       </ul>
@@ -411,9 +418,15 @@ const articleSchema = {
       el.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 
+    function go(href) {
+      if (!href) return;
+      if (href.charAt(0) === '#') jumpTo(href);
+      else window.location.href = href;
+    }
+
     let pendingClick = null;
-    document.querySelectorAll('#toc .toc-h2.has-sub').forEach(function (link) {
-      /* 单击：展开 / 收起下面的小节 */
+    document.querySelectorAll('#toc .has-sub').forEach(function (link) {
+      /* 单击：展开 / 收起这篇文章的章节书签 */
       link.addEventListener('click', function (e) {
         e.preventDefault();
         if (pendingClick) clearTimeout(pendingClick);
@@ -422,14 +435,14 @@ const articleSchema = {
           setGroup(link, link.getAttribute('aria-expanded') !== 'true');
         }, 220);
       });
-      /* 双击：直接跳到这一节 */
+      /* 双击：文章名 → 打开这篇文章；章节 → 跳到对应内容 */
       link.addEventListener('dblclick', function (e) {
         e.preventDefault();
         if (pendingClick) {
           clearTimeout(pendingClick);
           pendingClick = null;
         }
-        jumpTo(link.getAttribute('href'));
+        go(link.getAttribute('href'));
       });
       /* 键盘：Enter / 空格 直接跳转 */
       link.addEventListener('keydown', function (e) {
@@ -439,12 +452,17 @@ const articleSchema = {
           clearTimeout(pendingClick);
           pendingClick = null;
         }
-        jumpTo(link.getAttribute('href'));
+        go(link.getAttribute('href'));
       });
     });
 
-    /* ---------- 目录滚动高亮 ---------- */
-    const tocLinks = Array.from(document.querySelectorAll('#toc a'));
+    /* 当前这篇默认展开，读者一眼看到自己的章节 */
+    const currentPost = document.querySelector('.toc-post[data-current="true"]');
+    const currentToggle = currentPost && currentPost.querySelector('.has-sub');
+    if (currentToggle) setGroup(currentToggle, true);
+
+    /* ---------- 目录滚动高亮（只跟踪当前文章） ---------- */
+    const tocLinks = currentPost ? Array.from(currentPost.querySelectorAll('.toc-sub a')) : [];
     if (!tocLinks.length) return;
 
     const targets = tocLinks
@@ -465,14 +483,11 @@ const articleSchema = {
       if (!current) return;
       current.link.classList.add('active');
 
-      /* 到达小节时顺带展开它所在的大节 */
+      /* 滚到某一节时，若这篇文章的书签被手动收起了，就顺手展开 */
       const sub = current.link.closest('.toc-sub');
-      if (sub) {
-        const parent = sub.parentElement.querySelector('.toc-h2.has-sub');
-        if (parent) {
-          parent.classList.add('active');
-          if (sub.hasAttribute('hidden')) setGroup(parent, true);
-        }
+      if (sub && sub.hasAttribute('hidden')) {
+        const toggle = sub.parentElement.querySelector('.has-sub');
+        if (toggle) setGroup(toggle, true);
       }
     }
 
