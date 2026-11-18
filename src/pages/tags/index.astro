@@ -1,4 +1,5 @@
 ---
+import Breadcrumb from '../../components/Breadcrumb.astro';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { getCollection } from 'astro:content';
 import { visiblePosts, tagCounts } from '../../utils/posts';
@@ -15,9 +16,7 @@ const cats = CATEGORIES.map((c) => ({
 <BaseLayout title="标签与分类" description="按标签或分类浏览全部学习记录。">
   <div class="wrap">
     <section class="article-top">
-      <p class="breadcrumb">
-        <a href="/">~</a><span class="sep">/</span><span>tags</span>
-      </p>
+      <Breadcrumb segments={[{ label: 'tags' }]} />
       <h1>标签与分类</h1>
       <div class="article-meta">
         <span>{tags.length} 个标签</span>

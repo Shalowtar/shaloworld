@@ -208,12 +208,6 @@ ol {
   margin: 0 auto;
   padding: 0 var(--gutter);
 }
-.mono {
-  font-family: var(--font-mono);
-}
-.dim {
-  color: var(--ink-soft);
-}
 
 /* ---------- 报头 ---------- */
 .site-header {
@@ -246,20 +240,6 @@ ol {
   height: 1px;
   background: var(--rule);
   transform: translateY(-0.2em);
-}
-.mast-tag {
-  font-family: var(--font-ui);
-  font-size: 0.72rem;
-  letter-spacing: 0.18em;
-  color: var(--ink-soft);
-  white-space: nowrap;
-}
-.mast-date {
-  font-family: var(--font-mono);
-  font-size: 0.72rem;
-  letter-spacing: 0.1em;
-  color: var(--ink-soft);
-  white-space: nowrap;
 }
 .navbar {
   display: flex;
@@ -298,7 +278,6 @@ ol {
 }
 
 @media (max-width: 900px) {
-  .mast-tag,
   .mast-rule {
     display: none;
   }
@@ -446,12 +425,6 @@ ol {
   line-height: 1.95;
   color: var(--ink-soft);
 }
-.hero-tags {
-  display: flex;
-  gap: 18px;
-  flex-wrap: wrap;
-  margin-bottom: 28px;
-}
 .hero-actions {
   display: flex;
   gap: 12px;
@@ -544,11 +517,6 @@ html.intro-on {
   }
   .nav {
     gap: 14px;
-  }
-}
-@media (max-width: 520px) {
-  .mast-date {
-    display: none;
   }
 }
 
@@ -812,48 +780,6 @@ body {
   color: var(--ink-soft);
 }
 
-/* ---------- 技能 ---------- */
-.skills {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 0 44px;
-  padding-top: 8px;
-}
-.skill {
-  padding: 16px 0;
-  border: 0;
-  border-bottom: 1px solid var(--rule-soft);
-  border-radius: 0;
-  background: none;
-}
-.skill-top {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 9px;
-}
-.skill-top strong {
-  font-family: var(--font-display);
-  font-weight: 400;
-  font-size: 1.06rem;
-  letter-spacing: 0.02em;
-  color: var(--ink-strong);
-}
-.skill-top span {
-  font-family: var(--font-mono);
-  font-size: 0.68rem;
-  color: var(--ink-soft);
-}
-.bar {
-  height: 2px;
-  background: var(--rule-soft);
-  overflow: hidden;
-}
-.bar > div {
-  height: 2px;
-  background: var(--accent);
-}
 
 /* ---------- 筛选 ---------- */
 .filters {
@@ -891,55 +817,6 @@ body {
   color: var(--ink-soft);
 }
 
-/* ---------- 空状态 ---------- */
-.empty-state {
-  display: grid;
-  place-items: center;
-  gap: 6px;
-  margin-top: 24px;
-  padding: 54px 24px 58px;
-  border: 1px dashed var(--rule);
-  border-radius: 0;
-  background: color-mix(in srgb, var(--paper-2) 70%, transparent);
-  text-align: center;
-}
-.empty-state .es-mark {
-  font-family: var(--font-mono);
-  font-size: 1.4rem;
-  letter-spacing: 0.12em;
-  color: var(--accent);
-  margin-bottom: 8px;
-}
-.empty-state h3 {
-  margin: 0;
-  font-family: var(--font-display);
-  font-weight: 400;
-  font-size: 1.15rem;
-  letter-spacing: 0.03em;
-  color: var(--ink-strong);
-}
-.empty-state p {
-  margin: 0;
-  max-width: 44ch;
-  font-size: 0.9rem;
-  line-height: 1.85;
-  color: var(--ink-soft);
-}
-.empty-state .es-cmd {
-  margin-top: 18px;
-  padding: 8px 16px;
-  border: 1px solid var(--rule-soft);
-  border-radius: 0;
-  background: var(--code-bg);
-}
-.empty-state .es-cmd code {
-  font-family: var(--font-mono);
-  font-size: 0.78rem;
-  color: var(--accent);
-  background: none;
-  border: 0;
-  padding: 0;
-}
 
 /* ---------- 内页刊头 ---------- */
 .article-top {
@@ -1545,12 +1422,6 @@ body {
 }
 
 /* ---------- 关于 ------------------------------------------ */
-.about-grid {
-  display: grid;
-  gap: 44px;
-  max-width: 780px;
-  padding-top: 34px;
-}
 .profile {
   display: grid;
   grid-template-columns: auto 1fr;
@@ -1631,12 +1502,6 @@ body {
 .contact-list a:hover {
   color: var(--accent);
   border-bottom-color: var(--accent);
-}
-.about-grid .section-head {
-  margin-bottom: 4px;
-}
-.about-grid .post-list {
-  padding-top: 4px;
 }
 
 /* ---------- 页脚 ---------- */

@@ -1,4 +1,5 @@
 ---
+import Breadcrumb from '../../components/Breadcrumb.astro';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { getCollection, render } from 'astro:content';
 import { SITE } from '../../consts';
@@ -57,12 +58,9 @@ const articleSchema = {
   <div class="reading-progress" id="reading-progress" aria-hidden="true"></div>
   <div class="wrap">
     <section class="article-top">
-      <p class="breadcrumb">
-        <a href="/">~</a><span class="sep">/</span>
-        <a href="/writeups/">writeups</a><span class="sep">/</span>
-        {data.event && <><span>{data.event}</span><span class="sep">/</span></>}
-        <span>{data.category}</span>
-      </p>
+      <Breadcrumb
+        segments={[{ label: 'writeups', href: '/writeups/' }, ...(data.event ? [{ label: data.event }] : []), { label: data.category }]}
+      />
 
       <div class="article-badges">
         <span class="badge" data-cat={data.category}>{data.category}</span>

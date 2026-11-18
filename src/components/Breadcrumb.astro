@@ -1,0 +1,16 @@
+---
+interface Segment {
+  label: string;
+  href?: string;
+}
+
+interface Props {
+  segments: Segment[];
+}
+
+const { segments } = Astro.props;
+---
+
+<p class="breadcrumb">
+  <a href="/">~</a>{segments.map((s) => (<><span class="sep">/</span>{s.href ? <>{' '}<a href={s.href}>{s.label}</a></> : <span>{s.label}</span>}</>))}
+</p>

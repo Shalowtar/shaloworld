@@ -1,13 +1,12 @@
 ---
+import Breadcrumb from '../../components/Breadcrumb.astro';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 ---
 
 <BaseLayout title="项目" description="自己动手做的一些东西。">
   <div class="wrap">
     <section class="article-top">
-      <p class="breadcrumb">
-        <a href="/">~</a><span class="sep">/</span><span>projects</span>
-      </p>
+      <Breadcrumb segments={[{ label: 'projects' }]} />
       <h1>项目</h1>
     </section>
 

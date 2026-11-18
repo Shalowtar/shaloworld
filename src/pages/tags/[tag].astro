@@ -1,4 +1,5 @@
 ---
+import Breadcrumb from '../../components/Breadcrumb.astro';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import PostCard from '../../components/PostCard.astro';
 import { getCollection } from 'astro:content';
@@ -20,10 +21,7 @@ const posts = all.filter((p) => p.data.tags.includes(tag));
 <BaseLayout title={`#${tag}`} description={`标签 #${tag} 下的全部文章。`}>
   <div class="wrap">
     <section class="article-top">
-      <p class="breadcrumb">
-        <a href="/">~</a><span class="sep">/</span>
-        <a href="/tags/">tags</a><span class="sep">/</span><span>#{tag}</span>
-      </p>
+      <Breadcrumb segments={[{ label: 'tags', href: '/tags/' }, { label: '#' + tag }]} />
       <h1>#{tag}</h1>
       <div class="article-meta"><span>{posts.length} 篇</span></div>
     </section>

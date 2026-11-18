@@ -1,4 +1,5 @@
 ---
+import Breadcrumb from '../components/Breadcrumb.astro';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import { getCollection } from 'astro:content';
 import { visiblePosts, formatDate } from '../utils/posts';
@@ -46,9 +47,7 @@ const years = [...byYear.entries()]
 <BaseLayout title="归档" description="按年份与月份浏览全部文章。">
   <div class="wrap">
     <section class="article-top">
-      <p class="breadcrumb">
-        <a href="/">~</a><span class="sep">/</span><span>archive</span>
-      </p>
+      <Breadcrumb segments={[{ label: 'archive' }]} />
       <h1>归档</h1>
       <div class="article-meta">
         <span>共 {all.length} 篇</span>
