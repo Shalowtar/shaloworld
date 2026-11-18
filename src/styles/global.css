@@ -1612,7 +1612,8 @@ html[data-toc="off"] .toc-fab {
   padding: 12px 0;
   border-bottom: 1px solid var(--rule-soft);
   font-family: var(--font-ui);
-  font-size: 0.88rem;
+  font-size: 0.9rem;
+  line-height: 1.6;
   letter-spacing: 0.04em;
   color: var(--ink);
   transition: color 0.15s;

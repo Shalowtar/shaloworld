@@ -46,10 +46,7 @@ const cats = CATEGORIES.map((c) => ({
           <h2 class="index-head">标签</h2>
           <div class="tag-cloud">
             {tags.map((t) => (
-              <a
-                href={`/tags/${encodeURIComponent(t.tag)}/`}
-                style={`font-size:${Math.min(1.15, 0.8 + t.count * 0.05)}rem`}
-              >
+              <a href={`/tags/${encodeURIComponent(t.tag)}/`}>
                 #{t.tag}
                 <span class="n">{t.count}</span>
               </a>
