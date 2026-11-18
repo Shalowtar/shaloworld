@@ -19,8 +19,14 @@ attachments:
 
 完整过程、IDA 截图和逐条注释都在下面这份 pdf 里，共 3 页。
 
+<div class="pdf-block">
+<div class="pdf-head">
+<span class="pdf-tag">PDF</span>
+<span class="pdf-name">第一周周报 · 逆向</span>
+<a class="pdf-open" href="/downloads/week1-reverse-report.pdf" target="_blank" rel="noopener">新窗口打开 ↗</a>
+</div>
 <iframe class="pdf-frame" src="/downloads/week1-reverse-report.pdf" title="第一周周报：逆向（PDF 预览）" loading="lazy"></iframe>
-
-<p class="pdf-hint">如果上面的预览打不开（部分手机浏览器和微信内置浏览器会拦内嵌 pdf），用下面的链接下载：</p>
+<p class="pdf-hint">如果上面的预览打不开（部分手机浏览器和微信内置浏览器会拦内嵌 pdf），用下面的链接下载。</p>
+</div>
 
 [下载《第一周周报——逆向》PDF（206 KB）](/downloads/week1-reverse-report.pdf)
