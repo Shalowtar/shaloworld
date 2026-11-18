@@ -27,7 +27,14 @@
   /* 尺寸 */
   --maxw: 1140px;
   --measure: 68ch;
+  /* 正文可读行宽；目录收起时放大，正文随之变宽 */
+  --text-measure: 68ch;
   --gutter: 26px;
+}
+
+/* 目录收起：右栏归零，正文吃满整行 */
+html[data-toc="off"] {
+  --text-measure: 84ch;
 }
 
 /* ---------- 基础 ---------- */
@@ -883,9 +890,21 @@ body {
 /* ---------- 正文 + 目录 ---------- */
 .article-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 200px;
-  gap: 60px;
+  grid-template-columns: minmax(0, 1fr) 210px;
+  gap: 56px;
   padding: 40px 0 0;
+  transition: grid-template-columns 0.34s cubic-bezier(0.4, 0, 0.2, 1), gap 0.34s cubic-bezier(0.4, 0, 0.2, 1);
+}
+html[data-toc="off"] .article-grid {
+  grid-template-columns: minmax(0, 1fr) 0px;
+  gap: 0;
+}
+html[data-toc="off"] .toc {
+  opacity: 0;
+  visibility: hidden;
+  overflow: hidden;
+  padding-left: 0;
+  border-left: 0;
 }
 @media (max-width: 1040px) {
   .article-grid {
@@ -893,6 +912,8 @@ body {
     gap: 0;
   }
 }
+
+/* ---------- 目录 ---------- */
 .toc {
   position: sticky;
   top: 108px;
@@ -901,19 +922,40 @@ body {
   overflow: auto;
   padding-left: 20px;
   border-left: 1px solid var(--rule);
+  transition: opacity 0.22s ease, padding-left 0.3s ease, border-left-width 0.3s ease;
+}
+.toc-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 14px;
 }
 .toc-title {
-  margin-bottom: 14px;
   font-family: var(--font-display);
   font-size: 0.92rem;
   letter-spacing: 0.3em;
   color: var(--ink-strong);
 }
+.toc-collapse {
+  padding: 1px 7px;
+  border: 1px solid var(--rule);
+  background: transparent;
+  font-family: var(--font-ui);
+  font-size: 0.66rem;
+  letter-spacing: 0.08em;
+  color: var(--ink-soft);
+  transition: color 0.15s, border-color 0.15s;
+}
+.toc-collapse:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
 .toc ul {
   list-style: none;
 }
 .toc li {
-  margin: 0 0 7px;
+  margin: 0 0 6px;
 }
 .toc a {
   display: block;
@@ -922,7 +964,7 @@ body {
   border-left: 2px solid transparent;
   font-family: var(--font-ui);
   font-size: 0.78rem;
-  line-height: 1.6;
+  line-height: 1.65;
   letter-spacing: 0.03em;
   color: var(--ink-soft);
   transition: color 0.15s, border-color 0.15s;
@@ -932,12 +974,82 @@ body {
   color: var(--accent);
   border-left-color: var(--accent);
 }
-.toc .lvl3 {
-  padding-left: 24px;
+/* 大节：单击展开下面的小节，双击直接跳过去 */
+.toc .toc-h2 {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.toc .toc-h2 .toc-text {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.toc .toc-h2.has-sub {
+  cursor: pointer;
+  user-select: none;
+}
+.toc .toc-caret {
+  flex: 0 0 auto;
+  font-family: var(--font-ui);
+  font-size: 0.72rem;
+  line-height: 1;
+  color: var(--ink-soft);
+  transition: transform 0.2s ease, color 0.2s ease;
+}
+.toc .toc-h2.has-sub[aria-expanded="true"] .toc-caret {
+  transform: rotate(90deg);
+  color: var(--accent);
+}
+.toc .toc-sub {
+  margin: 4px 0 10px;
+  padding-left: 12px;
+  border-left: 1px dashed var(--rule-soft);
+}
+.toc .toc-sub li {
+  margin: 0 0 3px;
+}
+.toc .toc-sub a {
+  margin-left: -1px;
+  padding-left: 10px;
   font-size: 0.74rem;
+  opacity: 0.9;
+}
+.toc .toc-sub a:hover,
+.toc .toc-sub a.active {
+  color: var(--accent);
+  border-left-color: var(--accent);
+}
+
+/* 收起的目录留一条窄边签，点一下再展开 */
+.toc-fab {
+  position: fixed;
+  top: 50%;
+  right: 0;
+  z-index: 60;
+  display: none;
+  padding: 14px 7px;
+  border: 1px solid var(--rule);
+  border-right: 0;
+  background: var(--paper-2);
+  font-family: var(--font-display);
+  font-size: 0.8rem;
+  letter-spacing: 0.26em;
+  writing-mode: vertical-rl;
+  color: var(--ink-strong);
+  transition: color 0.15s, border-color 0.15s;
+}
+.toc-fab:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+html[data-toc="off"] .toc-fab {
+  display: block;
 }
 @media (max-width: 1040px) {
   .toc {
+    display: none;
+  }
+  .toc-fab {
     display: none;
   }
 }
@@ -945,11 +1057,22 @@ body {
 /* ---------- 正文排版 ---------- */
 .prose {
   min-width: 0;
-  max-width: var(--measure);
+  width: 100%;
   font-family: var(--font-serif);
   font-size: 1.05rem;
   line-height: 2.05;
   color: var(--ink);
+}
+/* 正文按可读行宽排；代码块、图片、表格吃满整栏，随窗口一起伸缩 */
+.prose p,
+.prose blockquote,
+.prose ul,
+.prose ol,
+.prose h2,
+.prose h3,
+.prose h4 {
+  max-width: var(--text-measure);
+  transition: max-width 0.34s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .prose > * + * {
   margin-top: 1.1em;
@@ -1086,13 +1209,16 @@ body {
 }
 .prose pre {
   position: relative;
+  width: 100%;
+  max-width: 100%;
   margin: 1.6em 0;
   padding: 16px 18px;
   border: 1px solid var(--rule);
   background: var(--code-bg) !important;
   overflow-x: auto;
-  font-size: 0.83rem;
+  font-size: clamp(0.72rem, 0.34rem + 0.56vw, 0.85rem);
   line-height: 1.68;
+  tab-size: 4;
 }
 .prose pre code {
   padding: 0;
@@ -1174,9 +1300,11 @@ body {
 }
 
 /* ---------- 附件 ---------- */
-.attachments {  margin: 2.4em 0 0;
+.attachments {
+  margin: 2.4em 0 0;
   border-top: 3px solid var(--ink-strong);
-  max-width: var(--measure);
+  max-width: var(--text-measure);
+  transition: max-width 0.34s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .attachments-head {
   padding: 10px 0;
@@ -1228,7 +1356,7 @@ body {
   background: var(--paper-2);
 }
 .pdf-hint {
-  max-width: var(--measure);
+  max-width: var(--text-measure);
   margin: 0 0 0.4em;
   font-family: var(--font-ui);
   font-size: 0.78rem;
@@ -1686,6 +1814,7 @@ body {
   .ink-hover,
   .ink-rest,
   .toc,
+  .toc-fab,
   .pager,
   .share-btn,
   .copy-btn,
