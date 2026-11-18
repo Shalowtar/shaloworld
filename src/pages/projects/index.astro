@@ -9,11 +9,16 @@ import { PROJECTS } from '../../data/projects';
     <section class="article-top">
       <Breadcrumb segments={[{ label: 'projects' }]} />
       <h1>项目</h1>
-      <div class="article-meta">
-        <span>共 {PROJECTS.length} 个</span>
-      </div>
+      {
+        PROJECTS.length > 0 && (
+          <div class="article-meta">
+            <span>共 {PROJECTS.length} 个</span>
+          </div>
+        )
+      }
     </section>
 
+    <!-- 项目一条都还没写：往 src/data/projects.ts 里加一条，这里就会自动出现 -->
     <div class="projects" id="projects">
       {
         PROJECTS.map((p) => (
