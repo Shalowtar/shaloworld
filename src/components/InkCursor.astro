@@ -144,6 +144,7 @@
     var pts = [];
     var clicks = []; // 点击时凝聚又散开的墨圈
     var CLICK_LIFE = 1000;
+    var bloomAcc = 0; // 拖动时累计走过的距离，够一段就洇一团小墨
 
     function pushPoint(x, y, t, v) {
       pts.push({ x: x, y: y, t: t, v: v });
@@ -178,6 +179,13 @@
         pushPoint(lastX + dx * f, lastY + dy * f, lastAt + dt * f, stampSpeed);
       }
 
+      // 每走一小段，就在笔路上洇开一团小墨（和点击同一个动作，小一号）
+      bloomAcc += dist;
+      if (bloomAcc >= 36) {
+        bloomAcc = 0;
+        addBloom(x, y, now);
+      }
+
       lastX = x;
       lastY = y;
       lastAt = now;
@@ -194,32 +202,53 @@
 
     /** 点击：一圈墨点先向中心聚拢凝成一小团，随后整圈向外散开淡去 */
     function addClick(x, y, now) {
-      clicks.push({ x: x, y: y, t: now, seed: Math.random() * Math.PI * 2 });
-      while (clicks.length > 5) clicks.shift();
+      spawn(x, y, now, 1, CLICK_LIFE, 1);
+    }
+
+    /** 拖动时沿笔路洇开的小墨团：同一套凝聚又散开的动作，只是小一号、慢一点 */
+    function addBloom(x, y, now) {
+      spawn(x, y, now, 0.58, 780, 0.8);
+    }
+
+    function spawn(x, y, now, k, life, mul) {
+      clicks.push({
+        x: x,
+        y: y,
+        t: now,
+        seed: Math.random() * Math.PI * 2,
+        k: k,
+        life: life,
+        mul: mul,
+      });
+      while (clicks.length > 12) clicks.shift();
       ensureLoop();
     }
 
     function drawClicks(now) {
       if (!clicks.length) return;
-      while (clicks.length && now - clicks[0].t > CLICK_LIFE) clicks.shift();
+
+      for (var i = clicks.length - 1; i >= 0; i -= 1) {
+        if (now - clicks[i].t > clicks[i].life) clicks.splice(i, 1);
+      }
 
       for (var i = 0; i < clicks.length; i += 1) {
         var c = clicks[i];
         var age = now - c.t;
-        if (age < 0 || age > CLICK_LIFE) continue;
+        if (age < 0 || age > c.life) continue;
 
+        var k = c.k;
         var inP = clamp(age / 260, 0, 1); // 凝聚段
-        var outP = clamp((age - 260) / 700, 0, 1); // 散开段
+        var outP = clamp((age - 260) / (c.life - 260), 0, 1); // 散开段
 
         // 半径：从 30px 收成 8px 凝成一团，再向外推到 56px 散开
-        var rr = 30 - 22 * inP + 48 * outP * outP;
-        var alpha = Math.pow(inP, 1.2) * Math.pow(1 - outP, 1.3);
+        var rr = (30 - 22 * inP + 48 * outP * outP) * k;
+        var alpha = Math.pow(inP, 1.2) * Math.pow(1 - outP, 1.3) * c.mul;
         if (alpha <= 0.03) continue;
 
         // 散开时墨点本身也放大，像墨在纸上化开
-        var dab = 5.4 * (1 - 0.2 * inP) + 10 * outP;
+        var dab = (5.4 * (1 - 0.2 * inP) + 10 * outP) * k;
         var rot = c.seed + (age / 1000) * 0.8;
-        var n = 16;
+        var n = k < 0.6 ? 11 : 16;
 
         for (var j = 0; j < n; j += 1) {
           var a = rot + (j / n) * Math.PI * 2;
@@ -230,7 +259,7 @@
         }
 
         // 中心一点更实的墨核
-        var core = 9 - 4.5 * inP;
+        var core = (9 - 4.5 * inP) * k;
         tctx.globalAlpha = clamp(alpha * 0.5, 0, 1);
         tctx.drawImage(ringDab, c.x - core, c.y - core, core * 2, core * 2);
       }
