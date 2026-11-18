@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <title>og cover</title>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      body {
+        width: 1200px;
+        height: 630px;
+        overflow: hidden;
+        background: #ece5d6;
+        color: #2b2724;
+        font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
+        position: relative;
+      }
+      /* 纸面暗角与细竖线，模仿杂志跨页 */
+      body::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background:
+          radial-gradient(120% 90% at 12% 10%, rgba(255, 255, 255, 0.42), transparent 62%),
+          radial-gradient(90% 80% at 100% 100%, rgba(148, 55, 38, 0.07), transparent 60%);
+        pointer-events: none;
+      }
+      .frame {
+        position: absolute;
+        inset: 34px;
+        border: 1px solid rgba(43, 39, 36, 0.16);
+      }
+      .inner {
+        position: absolute;
+        inset: 70px 74px 64px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+      }
+      .kicker {
+        font-size: 15px;
+        letter-spacing: 0.34em;
+        color: #7b6f60;
+        text-transform: uppercase;
+      }
+      .title {
+        font-family: Georgia, "Times New Roman", "KaiTi", "楷体", serif;
+        font-size: 100px;
+        line-height: 1.02;
+        letter-spacing: -0.01em;
+        color: #2b2724;
+      }
+      .sub {
+        margin-top: 22px;
+        font-family: Georgia, "KaiTi", "楷体", "STKaiti", serif;
+        font-size: 34px;
+        letter-spacing: 0.04em;
+        color: #943726;
+      }
+      .rule {
+        margin-top: 34px;
+        width: 132px;
+        height: 3px;
+        background: #943726;
+      }
+      .foot {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-size: 16px;
+        letter-spacing: 0.08em;
+        color: #6f6455;
+      }
+      .seal {
+        position: absolute;
+        right: 104px;
+        bottom: 132px;
+        width: 132px;
+        height: 132px;
+        background: #943726;
+        color: #f3ece0;
+        font-family: "KaiTi", "楷体", "STKaiti", serif;
+        font-size: 54px;
+        display: grid;
+        place-items: center;
+        transform: rotate(-4deg);
+        box-shadow: 0 10px 26px rgba(148, 55, 38, 0.18);
+      }
+      .seal::before {
+        content: "";
+        position: absolute;
+        inset: 9px;
+        border: 2px solid rgba(243, 236, 224, 0.72);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="frame"></div>
+    <div class="inner">
+      <div>
+        <p class="kicker">Personal Blog</p>
+        <p class="title" style="margin-top: 26px">Shalowworld</p>
+        <p class="sub">Shalowtar 的小世界</p>
+        <div class="rule"></div>
+      </div>
+      <div class="foot">
+        <span>shaloworld.pages.dev</span>
+        <span>github.com/Shalowtar</span>
+      </div>
+    </div>
+    <div class="seal">墨</div>
+  </body>
+</html>

@@ -16,6 +16,10 @@ const { title, description = SITE.description, type = 'website', publishedAt } =
 const fullTitle = title ? `${title} · ${SITE.title}` : SITE.title;
 const site = Astro.site ?? new URL(SITE.url);
 const canonical = new URL(Astro.url.pathname, site).href;
+const ogImage = new URL(SITE.ogImage, site).href;
+
+/** 结构化数据：JSON 里的 `<` 转义成 \\u003c，避免正文出现 </script> 时把标签顶断 */
+const jsonLd = (data: unknown) => JSON.stringify(data).replace(/</g, '\\u003c');
 
 /** 站点级结构化数据：让搜索引擎知道这是一个带作者的技术博客 */
 const siteSchema = {
@@ -52,9 +56,14 @@ const siteSchema = {
     <meta property="og:site_name" content={SITE.title} />
     <meta property="og:locale" content="zh_CN" />
     {publishedAt && <meta property="article:published_time" content={publishedAt.toISOString()} />}
-    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content={fullTitle} />
     <meta name="twitter:description" content={description} />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:image" content={ogImage} />
+    <meta name="twitter:image:alt" content={fullTitle} />
 
     <link rel="alternate" type="application/rss+xml" title={`${SITE.title} RSS`} href="/rss.xml" />
     <link rel="icon" href="/icon.svg" type="image/svg+xml" />
@@ -70,7 +79,7 @@ const siteSchema = {
     <link rel="preload" as="font" type="font/woff2" crossorigin href="/fonts/wenkai/files/lxgwwenkai-regular-subset-119.woff2" />
     <link rel="stylesheet" href="/fonts/wenkai/lxgwwenkai-regular.css" />
 
-    <script type="application/ld+json" set:html={JSON.stringify(siteSchema)} />
+    <script type="application/ld+json" set:html={jsonLd(siteSchema)} />
     <slot name="head" />
   </head>
   <body id="top">

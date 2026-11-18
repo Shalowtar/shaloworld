@@ -1,16 +1,46 @@
 ---
 import Breadcrumb from '../../components/Breadcrumb.astro';
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import { PROJECTS } from '../../data/projects';
 ---
 
-<BaseLayout title="项目" description="自己动手做的一些东西。">
+<BaseLayout title="项目" description="自己动手做的一些东西：在用、在做、写完的。">
   <div class="wrap">
     <section class="article-top">
       <Breadcrumb segments={[{ label: 'projects' }]} />
       <h1>项目</h1>
+      <div class="article-meta">
+        <span>共 {PROJECTS.length} 个</span>
+      </div>
     </section>
 
-    <!-- 内容待补：以后在这里按项目逐条列出（名称、一句话说明、链接） -->
-    <div class="projects" id="projects"></div>
+    <div class="projects" id="projects">
+      {
+        PROJECTS.map((p) => (
+          <article class="project">
+            <div class="project-head">
+              <h2>{p.name}</h2>
+              {p.status && <span class="project-status">{p.status}</span>}
+            </div>
+            <p>{p.summary}</p>
+            <div class="project-foot">
+              {p.stack.map((s) => (
+                <span class="tag">{s}</span>
+              ))}
+              {p.repo && (
+                <a href={p.repo} target="_blank" rel="noopener noreferrer">
+                  代码 →
+                </a>
+              )}
+              {p.href && (
+                <a href={p.href} target="_blank" rel="noopener noreferrer">
+                  访问 →
+                </a>
+              )}
+            </div>
+          </article>
+        ))
+      }
+    </div>
   </div>
 </BaseLayout>

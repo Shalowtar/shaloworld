@@ -35,6 +35,9 @@ const description = data.summary;
 const siteUrl = Astro.site ?? new URL(SITE.url);
 const canonical = new URL(Astro.url.pathname, siteUrl).href;
 
+/** JSON 里的 `<` 转义成 \u003c，正文出现 </script> 也不会顶断结构化数据标签 */
+const jsonLd = (data: unknown) => JSON.stringify(data).replace(/</g, '\\u003c');
+
 /** 文章级结构化数据：搜索引擎与分享卡片能读到标题、日期、分类、标签 */
 const articleSchema = {
   '@context': 'https://schema.org',
@@ -54,7 +57,7 @@ const articleSchema = {
 ---
 
 <BaseLayout title={data.title} description={description} type="article" publishedAt={data.publishedAt}>
-  <script slot="head" type="application/ld+json" set:html={JSON.stringify(articleSchema)} />
+  <script slot="head" type="application/ld+json" set:html={jsonLd(articleSchema)} />
   <div class="reading-progress" id="reading-progress" aria-hidden="true"></div>
   <div class="wrap">
     <section class="article-top">

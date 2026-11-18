@@ -1504,6 +1504,64 @@ body {
   border-bottom-color: var(--accent);
 }
 
+/* ---------- 项目 ---------- */
+.projects {
+  display: grid;
+  gap: 0;
+  padding-top: 6px;
+}
+.project {
+  padding: 26px 0 24px;
+  border-bottom: 1px solid var(--rule-soft);
+}
+.project-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+}
+.project-head h2 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 1.24rem;
+  letter-spacing: 0.02em;
+  color: var(--ink-strong);
+}
+.project-status {
+  font-family: var(--font-ui);
+  font-size: 0.7rem;
+  letter-spacing: 0.12em;
+  color: var(--accent);
+  white-space: nowrap;
+}
+.project p {
+  margin: 10px 0 14px;
+  max-width: 62ch;
+  font-size: 0.94rem;
+  line-height: 1.9;
+  color: var(--ink-soft);
+}
+.project-foot {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px 18px;
+}
+.project-foot a {
+  font-family: var(--font-ui);
+  font-size: 0.76rem;
+  letter-spacing: 0.06em;
+  color: var(--ink);
+  text-decoration: none;
+  border-bottom: 1px solid var(--rule);
+  padding-bottom: 1px;
+}
+.project-foot a:hover {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
 /* ---------- 页脚 ---------- */
 .site-footer {
   margin-top: auto;
@@ -1612,4 +1670,48 @@ body {
   font-family: var(--font-mono);
   font-size: 0.72rem;
   color: var(--ink-strong);
+}
+
+/* ---------- 打印 ---------- */
+@media print {
+  .site-header,
+  .site-footer,
+  .ink-canvas,
+  .ink-hover,
+  .ink-rest,
+  .toc,
+  .pager,
+  .share-btn,
+  .copy-btn,
+  .reading-progress,
+  .intro,
+  .search-hint {
+    display: none !important;
+  }
+  body {
+    background: #fff;
+    color: #111;
+  }
+  .wrap {
+    max-width: none;
+    padding: 0;
+  }
+  .article-grid {
+    display: block;
+    padding-top: 0;
+  }
+  a {
+    color: #111;
+    text-decoration: none;
+  }
+  .article-body {
+    font-size: 11pt;
+    line-height: 1.7;
+  }
+  pre,
+  blockquote,
+  .entry,
+  .project {
+    break-inside: avoid;
+  }
 }
