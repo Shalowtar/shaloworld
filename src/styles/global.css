@@ -1070,23 +1070,21 @@ html[data-toc="off"] .toc {
   border-left-color: var(--accent);
 }
 
-/* 收起的目录留一条窄边签，点一下再展开 */
+/* 收起的目录留一个小标，宽屏挂在右上角，窄屏贴在文章页眉右上角 */
 .toc-fab {
   position: fixed;
-  top: 50%;
-  right: 0;
-  z-index: 60;
+  top: 116px;
+  right: 16px;
+  z-index: 45;
   display: none;
-  padding: 14px 7px;
+  padding: 6px 12px 5px;
   border: 1px solid var(--rule);
-  border-right: 0;
   background: var(--paper-2);
   font-family: var(--font-display);
   font-size: 0.8rem;
-  letter-spacing: 0.26em;
-  writing-mode: vertical-rl;
+  letter-spacing: 0.14em;
   color: var(--ink-strong);
-  transition: color 0.15s, border-color 0.15s;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
 }
 .toc-fab:hover {
   color: var(--accent);
@@ -1099,8 +1097,32 @@ html[data-toc="off"] .toc-fab {
   .toc {
     display: none;
   }
-  .toc-fab {
+  /* 窄屏：小标放进文章页眉的右上角，不再压在正文上 */
+  .article-top {
+    position: relative;
+  }
+  html[data-toc="off"] .toc-fab {
+    display: block;
+    position: absolute;
+    top: 0;
+    right: 0;
+  }
+  html[data-toc="open"] .toc-fab {
     display: none;
+  }
+  /* 窄屏点开目录时，目录变成右上角的浮层，正文宽度不变 */
+  html[data-toc="open"] .toc {
+    display: block;
+    position: fixed;
+    top: 116px;
+    right: 12px;
+    width: min(330px, calc(100vw - 24px));
+    max-height: calc(100vh - 140px);
+    z-index: 45;
+    padding: 16px 18px 18px 20px;
+    border: 1px solid var(--rule);
+    background: var(--paper);
+    box-shadow: 0 18px 36px rgba(35, 28, 24, 0.16);
   }
 }
 

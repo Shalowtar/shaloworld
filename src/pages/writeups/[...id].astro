@@ -79,9 +79,10 @@ const articleSchema = {
   <script is:inline slot="head">
     /* 目录收起状态在首屏绘制前就恢复，避免展开再收起的闪动 */
     try {
+      var narrow = window.matchMedia('(max-width: 1040px)').matches;
       document.documentElement.setAttribute(
         'data-toc',
-        localStorage.getItem('shaloworld-toc') === 'off' ? 'off' : 'open'
+        narrow ? 'off' : localStorage.getItem('shaloworld-toc') === 'off' ? 'off' : 'open'
       );
     } catch (e) {}
   </script>
@@ -91,6 +92,12 @@ const articleSchema = {
       <Breadcrumb
         segments={[{ label: 'learning', href: '/writeups/' }, ...(data.event ? [{ label: data.event }] : []), { label: data.category }]}
       />
+
+      {outlines.length > 0 && (
+        <button class="toc-fab" id="toc-fab" type="button" aria-label="展开目录">
+          目录
+        </button>
+      )}
 
       <div class="article-badges">
         <span class="badge" data-cat={data.category}>{data.category}</span>
@@ -177,9 +184,6 @@ const articleSchema = {
                 ))}
               </ul>
             </aside>
-            <button class="toc-fab" id="toc-fab" type="button" aria-label="展开目录">
-              目 录
-            </button>
           </>
         )
       }
@@ -433,23 +437,54 @@ const articleSchema = {
     const collapseBtn = document.getElementById('toc-collapse');
     const tocFab = document.getElementById('toc-fab');
 
-    function setTocOpen(open) {
+    function setTocOpen(open, persist) {
       document.documentElement.setAttribute('data-toc', open ? 'open' : 'off');
       if (collapseBtn) collapseBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
       if (tocFab) tocFab.setAttribute('aria-expanded', open ? 'false' : 'true');
+      if (persist === false) return;
       try {
         localStorage.setItem('shaloworld-toc', open ? 'open' : 'off');
       } catch (e) {}
+    }
+    const narrowMQ = window.matchMedia('(max-width: 1040px)');
+    function isNarrow() {
+      return narrowMQ.matches;
+    }
+    /* 从宽屏拖窄时把浮层收起来，避免刚变窄就弹出一块目录 */
+    if (narrowMQ.addEventListener) {
+      narrowMQ.addEventListener('change', function (e) {
+        if (e.matches) setTocOpen(false, false);
+      });
     }
     if (collapseBtn) {
       collapseBtn.addEventListener('click', function () {
         setTocOpen(false);
       });
-      setTocOpen(document.documentElement.getAttribute('data-toc') !== 'off');
+      setTocOpen(document.documentElement.getAttribute('data-toc') !== 'off', false);
     }
     if (tocFab) {
       tocFab.addEventListener('click', function () {
         setTocOpen(true);
+      });
+    }
+
+    /* 窄屏的目录浮层：点正文任意处或按 Esc 收回 */
+    document.addEventListener('click', function (e) {
+      if (!isNarrow() || document.documentElement.getAttribute('data-toc') !== 'open') return;
+      if (e.target.closest('#toc') || e.target.closest('#toc-fab')) return;
+      setTocOpen(false, false);
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && isNarrow()) setTocOpen(false, false);
+    });
+    const tocPanel = document.getElementById('toc');
+    if (tocPanel) {
+      tocPanel.addEventListener('click', function (e) {
+        if (isNarrow() && e.target.closest('a')) {
+          setTimeout(function () {
+            setTocOpen(false, false);
+          }, 0);
+        }
       });
     }
 
