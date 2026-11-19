@@ -24,8 +24,19 @@ const isActive = (href: string) =>
         ))
       }
     </nav>
-    <a class="nav-extra" href="/search/" aria-current={path.startsWith('/search') ? 'page' : undefined}>
-      搜索
-    </a>
+    <div class="nav-tools">
+      <a
+        class="nav-extra nav-toc"
+        id="toc-entry"
+        href="/toc/"
+        aria-current={path.startsWith('/toc') ? 'page' : undefined}
+        aria-expanded="false"
+      >
+        目录
+      </a>
+      <a class="nav-extra" href="/search/" aria-current={path.startsWith('/search') ? 'page' : undefined}>
+        搜索
+      </a>
+    </div>
   </div>
 </header>

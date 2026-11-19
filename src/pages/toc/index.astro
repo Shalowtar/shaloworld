@@ -1,0 +1,84 @@
+---
+import Breadcrumb from '../../components/Breadcrumb.astro';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getCollection, render } from 'astro:content';
+import { CATEGORIES } from '../../consts';
+import { visiblePosts, formatDate } from '../../utils/posts';
+
+/* 目录总页：分类是第一级，下面依次是文章、文章的章节 */
+const all = visiblePosts(await getCollection('writeups'));
+
+const groups: {
+  name: string;
+  latest: number;
+  posts: { id: string; title: string; date: Date; headings: { depth: number; slug: string; text: string }[] }[];
+}[] = [];
+
+for (const cat of CATEGORIES) {
+  const list = all.filter((p) => p.data.category === cat);
+  if (!list.length) continue;
+  const posts = [];
+  for (const p of list) {
+    const { headings } = await render(p);
+    posts.push({
+      id: p.id,
+      title: p.data.title,
+      date: p.data.publishedAt,
+      headings: headings.filter((h) => h.depth === 2 || h.depth === 3),
+    });
+  }
+  groups.push({ name: cat, latest: posts[0].date.getTime(), posts });
+}
+
+/* 最近有更新的分类排在前面 */
+groups.sort((a, b) => b.latest - a.latest);
+
+const totalPosts = all.length;
+---
+
+<BaseLayout title="目录" description="按分类整理的站点目录：分类、文章、章节一路点进去。">
+  <div class="wrap">
+    <section class="article-top">
+      <Breadcrumb segments={[{ label: 'toc' }]} />
+      <h1>目录</h1>
+      <div class="article-meta">
+        <span>{groups.length} 个分类</span>
+        <span>{totalPosts} 篇文章</span>
+      </div>
+    </section>
+
+    <div class="dir-page">
+      {
+        groups.map((g) => (
+          <section class="dir-cat">
+            <h2 class="dir-cat-head">
+              <span>{g.name}</span>
+              <span class="dir-count">{g.posts.length} 篇</span>
+            </h2>
+            {g.posts.map((p) => (
+              <article class="dir-post">
+                <div class="dir-post-head">
+                  <a class="dir-post-title" href={`/writeups/${p.id}/`}>
+                    {p.title}
+                  </a>
+                  <time class="dir-date" datetime={p.date.toISOString()}>
+                    {formatDate(p.date)}
+                  </time>
+                </div>
+                {p.headings.length > 0 && (
+                  <ul class="dir-heads">
+                    {p.headings.map((h) => (
+                      <li class={h.depth === 3 ? 'is-deep' : ''}>
+                        <a href={`/writeups/${p.id}/#${h.slug}`}>{h.text}</a>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </article>
+            ))}
+          </section>
+        ))
+      }
+    </div>
+  </div>
+</BaseLayout>

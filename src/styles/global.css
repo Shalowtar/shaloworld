@@ -278,6 +278,15 @@ ol {
 .nav-extra:hover {
   color: var(--accent);
 }
+.nav-tools {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+.nav-toc[aria-expanded="true"] {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
 .nav a[aria-current="page"],
 .nav-extra[aria-current="page"] {
   color: var(--ink-strong);
@@ -1070,59 +1079,26 @@ html[data-toc="off"] .toc {
   border-left-color: var(--accent);
 }
 
-/* 收起的目录留一个小标，宽屏挂在右上角，窄屏贴在文章页眉右上角 */
-.toc-fab {
-  position: fixed;
-  top: 116px;
-  right: 16px;
-  z-index: 45;
-  display: none;
-  padding: 6px 12px 5px;
-  border: 1px solid var(--rule);
-  background: var(--paper-2);
-  font-family: var(--font-display);
-  font-size: 0.8rem;
-  letter-spacing: 0.14em;
-  color: var(--ink-strong);
-  transition: color 0.15s, border-color 0.15s, background 0.15s;
-}
-.toc-fab:hover {
-  color: var(--accent);
-  border-color: var(--accent);
-}
-html[data-toc="off"] .toc-fab {
+/* 目录按钮点开的小目录：宽窄都从右上角浮出，鼠标移开就收回 */
+html[data-pop="on"] .toc {
   display: block;
+  position: fixed;
+  top: 114px;
+  right: max(12px, calc((100vw - var(--maxw)) / 2 + var(--gutter)));
+  left: auto;
+  width: min(332px, calc(100vw - 24px));
+  max-height: calc(100vh - 148px);
+  z-index: 45;
+  padding: 16px 18px 18px 20px;
+  border: 1px solid var(--rule);
+  background: var(--paper);
+  box-shadow: 0 18px 34px rgba(35, 28, 24, 0.16);
+  opacity: 1;
+  visibility: visible;
 }
 @media (max-width: 1040px) {
   .toc {
     display: none;
-  }
-  /* 窄屏：小标放进文章页眉的右上角，不再压在正文上 */
-  .article-top {
-    position: relative;
-  }
-  html[data-toc="off"] .toc-fab {
-    display: block;
-    position: absolute;
-    top: 0;
-    right: 0;
-  }
-  html[data-toc="open"] .toc-fab {
-    display: none;
-  }
-  /* 窄屏点开目录时，目录变成右上角的浮层，正文宽度不变 */
-  html[data-toc="open"] .toc {
-    display: block;
-    position: fixed;
-    top: 116px;
-    right: 12px;
-    width: min(330px, calc(100vw - 24px));
-    max-height: calc(100vh - 140px);
-    z-index: 45;
-    padding: 16px 18px 18px 20px;
-    border: 1px solid var(--rule);
-    background: var(--paper);
-    box-shadow: 0 18px 36px rgba(35, 28, 24, 0.16);
   }
 }
 
@@ -1942,6 +1918,80 @@ html[data-toc="off"] .toc-fab {
   color: var(--ink-strong);
 }
 
+/* ---------- 目录总页：分类 → 文章 → 章节 ---------- */
+.dir-page {
+  padding: 30px 0 0;
+}
+.dir-cat {
+  margin: 0 0 46px;
+}
+.dir-cat-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 0 0 6px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid var(--ink-strong);
+  font-family: var(--font-display);
+  font-size: 1.45rem;
+  color: var(--ink-strong);
+}
+.dir-count {
+  font-family: var(--font-ui);
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  color: var(--ink-soft);
+}
+.dir-post {
+  padding: 14px 0 12px;
+  border-bottom: 1px solid var(--rule-soft);
+}
+.dir-post-head {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+}
+.dir-post-title {
+  font-family: var(--font-display);
+  font-size: 1.06rem;
+  color: var(--ink-strong);
+  border-bottom: 1px solid transparent;
+  transition: color 0.15s, border-color 0.15s;
+}
+.dir-post-title:hover {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+.dir-date {
+  font-family: var(--font-ui);
+  font-size: 0.72rem;
+  color: var(--ink-soft);
+}
+.dir-heads {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px 18px;
+  margin: 9px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.dir-heads a {
+  font-size: 0.78rem;
+  color: var(--ink-soft);
+  border-bottom: 1px solid transparent;
+  transition: color 0.15s, border-color 0.15s;
+}
+.dir-heads a:hover {
+  color: var(--accent);
+  border-bottom-color: var(--rule);
+}
+.dir-heads li.is-deep {
+  padding-left: 18px;
+  opacity: 0.86;
+}
+
 /* ---------- 打印 ---------- */
 @media print {
   .site-header,
@@ -1950,7 +2000,6 @@ html[data-toc="off"] .toc-fab {
   .ink-hover,
   .ink-rest,
   .toc,
-  .toc-fab,
   .pager,
   .share-btn,
   .copy-btn,

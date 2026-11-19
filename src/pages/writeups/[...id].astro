@@ -93,12 +93,6 @@ const articleSchema = {
         segments={[{ label: 'learning', href: '/writeups/' }, ...(data.event ? [{ label: data.event }] : []), { label: data.category }]}
       />
 
-      {outlines.length > 0 && (
-        <button class="toc-fab" id="toc-fab" type="button" aria-label="展开目录">
-          目录
-        </button>
-      )}
-
       <div class="article-badges">
         <span class="badge" data-cat={data.category}>{data.category}</span>
         {data.difficulty && <span class="badge" data-diff={data.difficulty}>{data.difficulty}</span>}
@@ -433,58 +427,75 @@ const articleSchema = {
       });
     }
 
-    /* ---------- 目录：展开小节 / 收起整栏 / 跳转 ---------- */
+    /* ---------- 目录：页头按钮开小目录 / 展开小节 / 收起整栏 ---------- */
     const collapseBtn = document.getElementById('toc-collapse');
-    const tocFab = document.getElementById('toc-fab');
+    const tocEntry = document.getElementById('toc-entry');
+    const tocPanel = document.getElementById('toc');
 
     function setTocOpen(open, persist) {
       document.documentElement.setAttribute('data-toc', open ? 'open' : 'off');
       if (collapseBtn) collapseBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
-      if (tocFab) tocFab.setAttribute('aria-expanded', open ? 'false' : 'true');
       if (persist === false) return;
       try {
         localStorage.setItem('shaloworld-toc', open ? 'open' : 'off');
       } catch (e) {}
     }
-    const narrowMQ = window.matchMedia('(max-width: 1040px)');
-    function isNarrow() {
-      return narrowMQ.matches;
-    }
-    /* 从宽屏拖窄时把浮层收起来，避免刚变窄就弹出一块目录 */
-    if (narrowMQ.addEventListener) {
-      narrowMQ.addEventListener('change', function (e) {
-        if (e.matches) setTocOpen(false, false);
-      });
-    }
     if (collapseBtn) {
-      collapseBtn.addEventListener('click', function () {
-        setTocOpen(false);
-      });
       setTocOpen(document.documentElement.getAttribute('data-toc') !== 'off', false);
     }
-    if (tocFab) {
-      tocFab.addEventListener('click', function () {
-        setTocOpen(true);
-      });
+
+    /* 页头「目录」：单击开小目录，双击去目录总页；鼠标移出小目录就收回 */
+    function setPop(on) {
+      document.documentElement.setAttribute('data-pop', on ? 'on' : 'off');
+      if (tocEntry) tocEntry.setAttribute('aria-expanded', on ? 'true' : 'false');
+    }
+    const popOpen = function () {
+      return document.documentElement.getAttribute('data-pop') === 'on';
+    };
+    let popTimer = null;
+    function holdPop() {
+      if (popTimer) clearTimeout(popTimer);
+      popTimer = null;
+    }
+    function dropPop(delay) {
+      holdPop();
+      popTimer = setTimeout(function () {
+        setPop(false);
+      }, delay || 260);
     }
 
-    /* 窄屏的目录浮层：点正文任意处或按 Esc 收回 */
-    document.addEventListener('click', function (e) {
-      if (!isNarrow() || document.documentElement.getAttribute('data-toc') !== 'open') return;
-      if (e.target.closest('#toc') || e.target.closest('#toc-fab')) return;
-      setTocOpen(false, false);
-    });
-    document.addEventListener('keydown', function (e) {
-      if (e.key === 'Escape' && isNarrow()) setTocOpen(false, false);
-    });
-    const tocPanel = document.getElementById('toc');
+    if (tocEntry) {
+      tocEntry.addEventListener('click', function (e) {
+        e.preventDefault();
+        if (e.detail > 1) return; /* 双击时第二下不来回开合，交给 dblclick 去跳转 */
+        setPop(!popOpen());
+      });
+      tocEntry.addEventListener('dblclick', function () {
+        window.location.href = '/toc/';
+      });
+      tocEntry.addEventListener('mouseenter', holdPop);
+      tocEntry.addEventListener('mouseleave', function () {
+        if (popOpen()) dropPop(320);
+      });
+    }
     if (tocPanel) {
-      tocPanel.addEventListener('click', function (e) {
-        if (isNarrow() && e.target.closest('a')) {
-          setTimeout(function () {
-            setTocOpen(false, false);
-          }, 0);
+      tocPanel.addEventListener('mouseenter', holdPop);
+      tocPanel.addEventListener('mouseleave', function () {
+        if (popOpen()) dropPop(240);
+      });
+    }
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') setPop(false);
+    });
+
+    /* 小目录里的「收起」：浮层状态下关浮层，侧栏状态下收侧栏 */
+    if (collapseBtn) {
+      collapseBtn.addEventListener('click', function () {
+        if (popOpen()) {
+          setPop(false);
+          return;
         }
+        setTocOpen(false);
       });
     }
 
