@@ -1922,6 +1922,10 @@ html[data-pop="on"] .toc {
 .dir-page {
   padding: 30px 0 0;
 }
+/* 目录页把页头的粗黑线换成细线，视觉上轻一点 */
+.toc-page .article-top {
+  border-bottom: 1px solid var(--rule-soft);
+}
 .dir-hint {
   margin-left: auto;
   font-family: var(--font-ui);
@@ -1931,7 +1935,7 @@ html[data-pop="on"] .toc {
   opacity: 0.85;
 }
 .dir-cat {
-  margin: 0 0 34px;
+  margin: 0 0 38px;
 }
 .dir-cat-head {
   display: flex;
@@ -1939,33 +1943,41 @@ html[data-pop="on"] .toc {
   gap: 14px;
   width: 100%;
   margin: 0;
-  padding: 2px 0 10px;
+  padding: 0 0 9px;
   border: 0;
-  border-bottom: 2px solid var(--ink-strong);
+  border-bottom: 1px solid var(--rule-soft);
   background: none;
   cursor: pointer;
   text-align: left;
   font-family: var(--font-display);
-  font-size: 1.45rem;
+  font-size: 1.3rem;
+  letter-spacing: 0.02em;
   color: var(--ink-strong);
   transition: color 0.15s, border-color 0.15s;
 }
 .dir-cat-head:hover {
+  border-bottom-color: var(--rule);
+}
+.dir-cat-head:hover .dir-cat-name {
   color: var(--accent);
-  border-bottom-color: var(--accent);
+}
+.dir-cat-name {
+  transition: color 0.15s;
 }
 .dir-cat-meta {
   margin-left: auto;
   font-family: var(--font-ui);
-  font-size: 0.72rem;
-  letter-spacing: 0.12em;
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
   color: var(--ink-soft);
+  opacity: 0.85;
 }
 .dir-caret {
   font-family: var(--font-ui);
-  font-size: 0.86rem;
+  font-size: 0.8rem;
   line-height: 1;
   color: var(--ink-soft);
+  opacity: 0.8;
   transform: rotate(0deg);
   transition: transform 0.2s ease, color 0.15s;
 }
@@ -1974,16 +1986,15 @@ html[data-pop="on"] .toc {
   color: var(--accent);
 }
 .dir-cat-body {
-  margin-left: 4px;
-  padding: 4px 0 0 14px;
-  border-left: 1px dashed var(--rule-soft);
+  margin-left: 6px;
+  padding: 2px 0 0 16px;
+  border-left: 1px dotted var(--rule-soft);
 }
 .dir-post {
-  padding: 12px 0 10px;
-  border-bottom: 1px solid var(--rule-soft);
+  padding: 11px 0 7px;
 }
-.dir-post:last-child {
-  border-bottom: 0;
+.dir-post + .dir-post {
+  border-top: 1px dotted var(--rule-soft);
 }
 .dir-post-head {
   display: flex;
@@ -2002,7 +2013,7 @@ html[data-pop="on"] .toc {
 }
 .dir-post-title {
   font-family: var(--font-display);
-  font-size: 1.06rem;
+  font-size: 1rem;
   color: var(--ink-strong);
   transition: color 0.15s;
 }
@@ -2014,16 +2025,17 @@ html[data-pop="on"] .toc {
 }
 .dir-date {
   font-family: var(--font-ui);
-  font-size: 0.72rem;
+  font-size: 0.7rem;
   color: var(--ink-soft);
+  opacity: 0.85;
 }
 .dir-heads {
   display: flex;
   flex-wrap: wrap;
   gap: 5px 18px;
-  margin: 9px 0 2px 8px;
+  margin: 7px 0 2px 4px;
   padding: 2px 0 2px 14px;
-  border-left: 1px dashed var(--rule-soft);
+  border-left: 1px dotted var(--rule-soft);
   list-style: none;
 }
 .dir-heads a {
