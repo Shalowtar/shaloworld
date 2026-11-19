@@ -376,6 +376,9 @@ ol {
 .badge[data-cat="C"] {
   color: #6d4c3d;
 }
+.badge[data-cat="密码学"] {
+  color: #5d5470;
+}
 .badge[data-diff="Easy"] {
   color: #35544a;
 }
@@ -638,6 +641,9 @@ body {
 }
 .entry-kicker .k-cat[data-cat="C"] {
   color: #6d4c3d;
+}
+.entry-kicker .k-cat[data-cat="密码学"] {
+  color: #5d5470;
 }
 .entry-kicker .k-sep {
   color: var(--rule);
