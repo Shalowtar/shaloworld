@@ -5,7 +5,7 @@ import { getCollection, render } from 'astro:content';
 import { CATEGORIES } from '../../consts';
 import { visiblePosts, formatDate } from '../../utils/posts';
 
-/* 目录总页：分类是第一级，下面依次是文章、文章的章节 */
+/* 目录总页：分类是第一级，下面依次是文章、文章的章节；默认全部折叠 */
 const all = visiblePosts(await getCollection('writeups'));
 
 const groups: {
@@ -44,6 +44,7 @@ const totalPosts = all.length;
       <div class="article-meta">
         <span>{groups.length} 个分类</span>
         <span>{totalPosts} 篇文章</span>
+        <span class="dir-hint">单击展开 · 双击跳转</span>
       </div>
     </section>
 
@@ -51,34 +52,105 @@ const totalPosts = all.length;
       {
         groups.map((g) => (
           <section class="dir-cat">
-            <h2 class="dir-cat-head">
-              <span>{g.name}</span>
-              <span class="dir-count">{g.posts.length} 篇</span>
-            </h2>
-            {g.posts.map((p) => (
-              <article class="dir-post">
-                <div class="dir-post-head">
-                  <a class="dir-post-title" href={`/writeups/${p.id}/`}>
-                    {p.title}
-                  </a>
-                  <time class="dir-date" datetime={p.date.toISOString()}>
-                    {formatDate(p.date)}
-                  </time>
-                </div>
-                {p.headings.length > 0 && (
-                  <ul class="dir-heads">
-                    {p.headings.map((h) => (
-                      <li class={h.depth === 3 ? 'is-deep' : ''}>
-                        <a href={`/writeups/${p.id}/#${h.slug}`}>{h.text}</a>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </article>
-            ))}
+            <button
+              class="dir-cat-head"
+              type="button"
+              data-dir-toggle
+              data-href={`/writeups/?cat=${encodeURIComponent(g.name)}`}
+              aria-expanded="false"
+            >
+              <span class="dir-cat-name">{g.name}</span>
+              <span class="dir-cat-meta">{g.posts.length} 篇</span>
+              <span class="dir-caret" aria-hidden="true">
+                ›
+              </span>
+            </button>
+            <div class="dir-cat-body" hidden>
+              {g.posts.map((p) => (
+                <article class="dir-post">
+                  {p.headings.length > 0 ? (
+                    <button
+                      class="dir-post-head"
+                      type="button"
+                      data-dir-toggle
+                      data-href={`/writeups/${p.id}/`}
+                      aria-expanded="false"
+                    >
+                      <span class="dir-post-title">{p.title}</span>
+                      <time class="dir-date" datetime={p.date.toISOString()}>
+                        {formatDate(p.date)}
+                      </time>
+                      <span class="dir-caret" aria-hidden="true">
+                        ›
+                      </span>
+                    </button>
+                  ) : (
+                    <a class="dir-post-head is-link" href={`/writeups/${p.id}/`}>
+                      <span class="dir-post-title">{p.title}</span>
+                      <time class="dir-date" datetime={p.date.toISOString()}>
+                        {formatDate(p.date)}
+                      </time>
+                    </a>
+                  )}
+                  {p.headings.length > 0 && (
+                    <ul class="dir-heads" hidden>
+                      {p.headings.map((h) => (
+                        <li class={h.depth === 3 ? 'is-deep' : ''}>
+                          <a href={`/writeups/${p.id}/#${h.slug}`}>{h.text}</a>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </article>
+              ))}
+            </div>
           </section>
         ))
       }
     </div>
   </div>
 </BaseLayout>
+
+<script is:inline>
+  /* 大目录：单击展开、双击跳转，键盘 Enter 也能展开 */
+  (function () {
+    document.querySelectorAll('[data-dir-toggle]').forEach(function (el) {
+      var timer = null;
+
+      function toggle() {
+        var open = el.getAttribute('aria-expanded') === 'true';
+        el.setAttribute('aria-expanded', open ? 'false' : 'true');
+        var body = el.nextElementSibling;
+        if (body) body.toggleAttribute('hidden', open);
+      }
+
+      el.addEventListener('click', function (e) {
+        e.preventDefault();
+        if (timer) clearTimeout(timer);
+        timer = setTimeout(function () {
+          timer = null;
+          toggle();
+        }, 220);
+      });
+
+      el.addEventListener('dblclick', function (e) {
+        e.preventDefault();
+        if (timer) {
+          clearTimeout(timer);
+          timer = null;
+        }
+        if (el.dataset.href) window.location.href = el.dataset.href;
+      });
+
+      el.addEventListener('keydown', function (e) {
+        if (e.key !== 'Enter' && e.key !== ' ') return;
+        e.preventDefault();
+        if (timer) {
+          clearTimeout(timer);
+          timer = null;
+        }
+        toggle();
+      });
+    });
+  })();
+</script>
