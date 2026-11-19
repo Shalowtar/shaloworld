@@ -2,6 +2,8 @@
 interface Segment {
   label: string;
   href?: string;
+  /** 分类名传进来后按分类配色上色 */
+  cat?: string;
 }
 
 interface Props {
@@ -12,5 +14,5 @@ const { segments } = Astro.props;
 ---
 
 <p class="breadcrumb">
-  <a href="/">~</a>{segments.map((s) => (<><span class="sep">/</span>{s.href ? <>{' '}<a href={s.href}>{s.label}</a></> : <span>{s.label}</span>}</>))}
+  <a href="/">~</a>{segments.map((s) => (<><span class="sep">/</span>{s.href ? <>{' '}<a href={s.href}>{s.label}</a></> : <span class={s.cat ? 'cat-tone' : undefined} data-cat={s.cat}>{s.label}</span>}</>))}
 </p>

@@ -30,7 +30,7 @@ const counts = CATEGORIES.map((c) => ({
           <button class="chip" data-filter="all" aria-pressed="true">全部 ({all.length})</button>
           {counts.map((c) => (
             <button class="chip" data-filter={c.name} aria-pressed="false">
-              {c.name} ({c.count})
+              <span class="cat-tone" data-cat={c.name}>{c.name}</span> ({c.count})
             </button>
           ))}
         </div>

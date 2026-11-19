@@ -59,7 +59,7 @@ const totalPosts = all.length;
               data-href={`/writeups/?cat=${encodeURIComponent(g.name)}`}
               aria-expanded="false"
             >
-              <span class="dir-cat-name">{g.name}</span>
+              <span class="dir-cat-name cat-tone" data-cat={g.name}>{g.name}</span>
               <span class="dir-cat-meta">{g.posts.length} 篇</span>
               <span class="dir-caret" aria-hidden="true">
                 ›

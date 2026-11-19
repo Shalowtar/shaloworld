@@ -31,7 +31,7 @@ const cats = CATEGORIES.map((c) => ({
           <div class="tag-cloud">
             {cats.map((c) => (
               <a href={`/writeups/?cat=${encodeURIComponent(c.name)}`}>
-                {c.name}
+                <span class="cat-tone" data-cat={c.name}>{c.name}</span>
                 <span class="n">{c.count}</span>
               </a>
             ))}

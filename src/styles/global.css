@@ -388,6 +388,34 @@ ol {
 .badge[data-cat="密码学"] {
   color: #5d5470;
 }
+/* 分类词统一配色：面包屑、标签页、目录页、筛选条都沿用同一套；标签保持墨色 */
+.cat-tone[data-cat] {
+  color: var(--accent);
+}
+.cat-tone[data-cat="Reverse"] {
+  color: #3f5c8a;
+}
+.cat-tone[data-cat="Pwn"] {
+  color: #9a3b28;
+}
+.cat-tone[data-cat="Crypto"] {
+  color: #8a6a1f;
+}
+.cat-tone[data-cat="Web"] {
+  color: #35544a;
+}
+.cat-tone[data-cat="Misc"] {
+  color: #5b3f6b;
+}
+.cat-tone[data-cat="IoT"] {
+  color: #2f6070;
+}
+.cat-tone[data-cat="C"] {
+  color: #6d4c3d;
+}
+.cat-tone[data-cat="密码学"] {
+  color: #5d5470;
+}
 .badge[data-diff="Easy"] {
   color: #35544a;
 }

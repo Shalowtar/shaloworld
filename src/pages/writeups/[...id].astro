@@ -90,7 +90,7 @@ const articleSchema = {
   <div class="wrap">
     <section class="article-top">
       <Breadcrumb
-        segments={[{ label: 'learning', href: '/writeups/' }, ...(data.event ? [{ label: data.event }] : []), { label: data.category }]}
+        segments={[{ label: 'learning', href: '/writeups/' }, ...(data.event ? [{ label: data.event }] : []), { label: data.category, cat: data.category }]}
       />
 
       <div class="article-badges">
