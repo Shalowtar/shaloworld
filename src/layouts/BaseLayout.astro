@@ -80,6 +80,11 @@ const siteSchema = {
     <link rel="stylesheet" href="/fonts/wenkai/lxgwwenkai-regular.css" />
 
     <script type="application/ld+json" set:html={jsonLd(siteSchema)} />
+    {Astro.url.pathname === '/' && (
+      <script is:inline>
+        document.documentElement.classList.add('intro-on');
+      </script>
+    )}
     <slot name="head" />
   </head>
   <body id="top">
