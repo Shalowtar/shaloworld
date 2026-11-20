@@ -206,9 +206,9 @@ import { SITE } from '../consts';
     }
 
     /** 把折线按固定步长重新采样，笔刷沿这些点一路盖过去 */
-    function addPolyline(pts, step, acc) {
+    function addPolyline(pts, step, acc, r) {
       if (!pts || !pts.length) return;
-      acc.points.push({ x: pts[0][0], y: pts[0][1], cum: acc.len });
+      acc.points.push({ x: pts[0][0], y: pts[0][1], cum: acc.len, r: r });
       for (var i = 1; i < pts.length; i += 1) {
         var a = pts[i - 1];
         var b = pts[i];
@@ -222,6 +222,7 @@ import { SITE } from '../consts';
             x: a[0] + (b[0] - a[0]) * t,
             y: a[1] + (b[1] - a[1]) * t,
             cum: acc.len,
+            r: r,
           });
         }
       }
@@ -288,9 +289,12 @@ import { SITE } from '../consts';
         penX += glyphs[g].w + (g < glyphs.length - 1 ? ls : 0);
       }
 
-      // 笔刷半径略大于字符笔画，经过时能把整个笔画润开
-      var radius = Math.max(3, size * 0.18);
-      var step = Math.max(1, radius * 0.22);
+      // 笔刷半径略大于字符笔画，经过时能把整个笔画润开；
+      // 中文笔画细，用大一点的笔头；拉丁字形宽，笔头收一点才看得出一笔一笔走
+      var brushHan = Math.max(3, size * 0.18);
+      var brushLatin = Math.max(2.6, size * 0.125);
+      var stepHan = Math.max(1, brushHan * 0.22);
+      var stepLatin = Math.max(1, brushLatin * 0.24);
       var acc = { points: [], len: 0 };
 
       glyphs.forEach(function (gl) {
@@ -310,14 +314,14 @@ import { SITE } from '../consts';
                 return [left + q[0] * boxW, top + q[1] * boxH];
               })
             );
-            addPolyline(pts, step, acc);
+            addPolyline(pts, stepLatin, acc, brushLatin);
           });
         } else if (strokeData[gl.ch]) {
           strokeData[gl.ch].medians.forEach(function (raw) {
             var pts = raw.map(function (q) {
               return [left + (q[0] / 1024) * boxW, top + ((1024 - q[1]) / 1024) * boxH];
             });
-            addPolyline(pts, step, acc);
+            addPolyline(pts, stepHan, acc, brushHan);
           });
         }
       });
@@ -347,7 +351,6 @@ import { SITE } from '../consts';
         glyphs: glyphs,
         points: acc.points,
         total: acc.len || 1,
-        radius: radius,
         brush: brush,
         painted: 0,
       };
@@ -369,10 +372,10 @@ import { SITE } from '../consts';
     /** p 从 0 到 1：笔刷铺到哪儿，字就露到哪儿 */
     function drawLine(view, p) {
       var target = p * view.total;
-      var r = view.radius;
       while (view.painted < view.points.length) {
         var pt = view.points[view.painted];
         if (pt.cum > target) break;
+        var r = pt.r;
         view.mctx.drawImage(view.brush, pt.x - r, pt.y - r, r * 2, r * 2);
         view.painted += 1;
       }
