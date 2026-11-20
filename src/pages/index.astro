@@ -87,45 +87,121 @@ import { SITE } from '../consts';
       };
     }
 
-    function start() {
-      // ① 先停在欢迎语上，同时轻轻压近（1.06 倍，900ms）
-      brandEl.style.transition = 'transform 900ms cubic-bezier(.25,.6,.3,1)';
-      nameEl.style.transition = 'transform 900ms cubic-bezier(.25,.6,.3,1)';
-      brandEl.style.transform = 'scale(1.06)';
-      nameEl.style.transform = 'scale(1.06)';
+    /** 把一行字拆成单个字；词与词之间的空格留成普通空格，窄屏还能正常折行 */
+    function splitChars(el) {
+      var text = el.textContent;
+      var words = text.split(' ');
+      var list = [];
+      el.textContent = '';
+      for (var w = 0; w < words.length; w += 1) {
+        if (w > 0) el.appendChild(document.createTextNode(' '));
+        for (var i = 0; i < words[w].length; i += 1) {
+          var s = document.createElement('span');
+          s.className = 'ink-char';
+          s.textContent = words[w].charAt(i);
+          el.appendChild(s);
+          list.push(s);
+        }
+      }
+      return list;
+    }
 
+    function delay(ms) {
+      return new Promise(function (r) {
+        setTimeout(r, ms);
+      });
+    }
+
+    /** 按 step 的间隔把每个字放出来，像笔尖一字一字落纸 */
+    function write(chars, step) {
+      return new Promise(function (resolve) {
+        var i = 0;
+        (function tick() {
+          if (i >= chars.length) {
+            setTimeout(resolve, step);
+            return;
+          }
+          chars[i].classList.add('is-writing');
+          i += 1;
+          setTimeout(tick, step);
+        })();
+      });
+    }
+
+    function beginLand() {
       var brandLand = land(brandEl, h1);
       var nameLand = land(nameEl, lead);
 
-      // ② 1200ms 后才让「欢迎来到」淡出，之前一直看得见
-      setTimeout(function () {
-        hello.style.opacity = '0';
-        hello.style.transform = 'translateY(-10px)';
-      }, 1200);
+      hello.style.opacity = '0';
+      hello.style.transform = 'translateY(-10px)';
 
-      // ③ 1250ms 起把两行大字收进首页，纸色底同时化开
-      setTimeout(function () {
-        var ease = 'transform 1200ms cubic-bezier(.55,.06,.24,1)';
-        brandEl.style.transition = ease;
-        nameEl.style.transition = ease;
-        brandEl.style.transform = brandLand.transform;
-        nameEl.style.transform = nameLand.transform;
-        bg.style.transition = 'opacity 1000ms ease';
-        bg.style.opacity = '0';
+      var ease = 'transform 1000ms cubic-bezier(.55,.06,.24,1)';
+      brandEl.style.transition = ease;
+      nameEl.style.transition = ease;
+      brandEl.style.transform = brandLand.transform;
+      nameEl.style.transform = nameLand.transform;
+      bg.style.transition = 'opacity 1000ms ease';
+      bg.style.opacity = '0';
 
-        // ④ 位置已经对上，两边交叉淡出换成页面里真正的标题与那一行
-        setTimeout(function () {
-          brandEl.style.transition = 'opacity 260ms linear';
-          nameEl.style.transition = 'opacity 260ms linear';
-          brandEl.style.opacity = '0';
-          nameEl.style.opacity = '0';
-          h1.style.transition = 'opacity 260ms linear';
-          lead.style.transition = 'opacity 260ms linear';
-          h1.style.opacity = '1';
-          lead.style.opacity = '1';
-          setTimeout(finish, 280);
-        }, 1060);
-      }, 1250);
+      // 位置已经对上，两边交叉淡出换成页面里真正的标题与那一行
+      setTimeout(function () {
+        brandEl.style.transition = 'opacity 260ms linear';
+        nameEl.style.transition = 'opacity 260ms linear';
+        brandEl.style.opacity = '0';
+        nameEl.style.opacity = '0';
+        h1.style.transition = 'opacity 260ms linear';
+        lead.style.transition = 'opacity 260ms linear';
+        h1.style.opacity = '1';
+        lead.style.opacity = '1';
+        setTimeout(finish, 280);
+      }, 1010);
+    }
+
+    /** 沿一行字铺一道五色墨：朱砂 → 赭金 → 墨青 → 雾蓝，像苹果 hello 那样一笔一笔换色 */
+    function paintWash(chars) {
+      var stops = [
+        [148, 55, 38],
+        [138, 106, 31],
+        [53, 84, 74],
+        [63, 92, 138],
+      ];
+      var n = chars.length;
+      for (var i = 0; i < n; i += 1) {
+        var p = n > 1 ? i / (n - 1) : 0;
+        var seg = p * (stops.length - 1);
+        var a = Math.min(stops.length - 1, Math.floor(seg));
+        var b = Math.min(stops.length - 1, a + 1);
+        var t = seg - a;
+        var r = Math.round(stops[a][0] + (stops[b][0] - stops[a][0]) * t);
+        var g = Math.round(stops[a][1] + (stops[b][1] - stops[a][1]) * t);
+        var bl = Math.round(stops[a][2] + (stops[b][2] - stops[a][2]) * t);
+        chars[i].style.color = 'rgb(' + r + ', ' + g + ', ' + bl + ')';
+      }
+    }
+
+    function start() {
+      var helloChars = splitChars(hello);
+      var brandChars = splitChars(brandEl);
+      var nameChars = splitChars(nameEl);
+      paintWash(brandChars);
+
+      write(helloChars, 105)
+        .then(function () {
+          return delay(150);
+        })
+        .then(function () {
+          return write(brandChars, 90);
+        })
+        .then(function () {
+          return delay(170);
+        })
+        .then(function () {
+          return write(nameChars, 66);
+        })
+        .then(function () {
+          return delay(420);
+        })
+        .then(beginLand);
     }
 
     // 等字体到位再量位置，最多等 700ms，避免用正楷量、行楷显示
