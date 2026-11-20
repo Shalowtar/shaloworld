@@ -247,11 +247,22 @@ import { SITE } from '../consts';
         ' ' +
         style.fontFamily;
 
+      // 画布比元素四周多留一圈余量：字形有超出字身框的起笔、捺脚和字母外伸，
+      // 画布刚好等于元素大小时，这些边角会被画布边缘直接切掉
+      var pad = Math.max(8, Math.round(size * 0.36));
       var cvs = document.createElement('canvas');
-      cvs.width = Math.max(1, Math.round(rect.width * dpr));
-      cvs.height = Math.max(1, Math.round(rect.height * dpr));
+      cvs.width = Math.max(1, Math.round((rect.width + pad * 2) * dpr));
+      cvs.height = Math.max(1, Math.round((rect.height + pad * 2) * dpr));
       cvs.style.cssText =
-        'position:absolute;left:0;top:0;width:' + rect.width + 'px;height:' + rect.height + 'px;pointer-events:none;';
+        'position:absolute;left:' +
+        -pad +
+        'px;top:' +
+        -pad +
+        'px;width:' +
+        (rect.width + pad * 2) +
+        'px;height:' +
+        (rect.height + pad * 2) +
+        'px;pointer-events:none;';
       el.style.position = 'relative';
       el.appendChild(cvs);
 
@@ -269,7 +280,7 @@ import { SITE } from '../consts';
       var met = ctx.measureText(text);
       var asc = met.fontBoundingBoxAscent || size * 0.82;
       var desc = met.fontBoundingBoxDescent || size * 0.22;
-      var baseline = (rect.height - (asc + desc)) / 2 + asc;
+      var baseline = pad + (rect.height - (asc + desc)) / 2 + asc;
 
       // 逐字排版，位置与 CSS 的行内字距保持一致
       var glyphs = [];
@@ -282,7 +293,7 @@ import { SITE } from '../consts';
         totalW += w + (i < text.length - 1 ? ls : 0);
         glyphs.push({ ch: ch, w: w, space: ch === ' ' });
       }
-      var startX = (rect.width - totalW) / 2;
+      var startX = pad + (rect.width - totalW) / 2;
       var penX = startX;
       for (var g = 0; g < glyphs.length; g += 1) {
         glyphs[g].x = penX;
@@ -343,8 +354,8 @@ import { SITE } from '../consts';
         ctx: ctx,
         mctx: mctx,
         mask: mask,
-        w: rect.width,
-        h: rect.height,
+        w: rect.width + pad * 2,
+        h: rect.height + pad * 2,
         font: font,
         color: color,
         baseline: baseline,
