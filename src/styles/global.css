@@ -538,56 +538,6 @@ ol {
   transform-origin: center center;
   will-change: transform;
 }
-/* 入场写字：每个字带一条软边遮罩，笔尖从左往右扫过去，墨迹才一点点铺开；
-   字与字错开几十毫秒，连起来看就是一笔一笔写 */
-.ink-char {
-  display: inline-block;
-  padding: 0 0.05em;
-  margin: 0 -0.05em;
-  opacity: 0;
-  transform: translate3d(0, 0.14em, 0);
-  -webkit-mask-image: linear-gradient(
-    var(--ink-angle, 97deg),
-    #000 0%,
-    #000 34%,
-    rgba(0, 0, 0, 0.55) 46%,
-    rgba(0, 0, 0, 0) 53%,
-    rgba(0, 0, 0, 0) 100%
-  );
-  mask-image: linear-gradient(
-    var(--ink-angle, 97deg),
-    #000 0%,
-    #000 34%,
-    rgba(0, 0, 0, 0.55) 46%,
-    rgba(0, 0, 0, 0) 53%,
-    rgba(0, 0, 0, 0) 100%
-  );
-  -webkit-mask-size: 320% 100%;
-  mask-size: 320% 100%;
-  -webkit-mask-position: 100% 0;
-  mask-position: 100% 0;
-  -webkit-mask-repeat: no-repeat;
-  mask-repeat: no-repeat;
-  transition:
-    opacity 160ms linear,
-    transform 520ms cubic-bezier(0.22, 0.68, 0.24, 1),
-    -webkit-mask-position 560ms cubic-bezier(0.32, 0.62, 0.28, 1),
-    mask-position 560ms cubic-bezier(0.32, 0.62, 0.28, 1);
-  will-change: mask-position, transform, opacity;
-}
-/* 每个字的落笔角度错开一点，连起来更像手写而不是统一擦拭 */
-.ink-char:nth-child(2n) {
-  --ink-angle: 103deg;
-}
-.ink-char:nth-child(3n) {
-  --ink-angle: 92deg;
-}
-.ink-char.is-writing {
-  opacity: 1;
-  transform: translate3d(0, 0, 0);
-  -webkit-mask-position: 0 0;
-  mask-position: 0 0;
-}
 html.intro-on {
   overflow: hidden;
 }

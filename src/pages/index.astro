@@ -87,44 +87,9 @@ import { SITE } from '../consts';
       };
     }
 
-    /** 把一行字拆成单个字；词与词之间的空格留成普通空格，窄屏还能正常折行 */
-    function splitChars(el) {
-      var text = el.textContent;
-      var words = text.split(' ');
-      var list = [];
-      el.textContent = '';
-      for (var w = 0; w < words.length; w += 1) {
-        if (w > 0) el.appendChild(document.createTextNode(' '));
-        for (var i = 0; i < words[w].length; i += 1) {
-          var s = document.createElement('span');
-          s.className = 'ink-char';
-          s.textContent = words[w].charAt(i);
-          el.appendChild(s);
-          list.push(s);
-        }
-      }
-      return list;
-    }
-
     function delay(ms) {
       return new Promise(function (r) {
         setTimeout(r, ms);
-      });
-    }
-
-    /** 按 step 的间隔把每个字放出来，像笔尖一字一字落纸 */
-    function write(chars, step) {
-      return new Promise(function (resolve) {
-        var i = 0;
-        (function tick() {
-          if (i >= chars.length) {
-            setTimeout(resolve, step);
-            return;
-          }
-          chars[i].classList.add('is-writing');
-          i += 1;
-          setTimeout(tick, step);
-        })();
       });
     }
 
@@ -157,51 +122,317 @@ import { SITE } from '../consts';
       }, 1010);
     }
 
-    /** 沿一行字铺一道五色墨：朱砂 → 赭金 → 墨青 → 雾蓝，像苹果 hello 那样一笔一笔换色 */
-    function paintWash(chars) {
-      var stops = [
-        [148, 55, 38],
-        [138, 106, 31],
-        [53, 84, 74],
-        [63, 92, 138],
-      ];
-      var n = chars.length;
-      for (var i = 0; i < n; i += 1) {
-        var p = n > 1 ? i / (n - 1) : 0;
-        var seg = p * (stops.length - 1);
-        var a = Math.min(stops.length - 1, Math.floor(seg));
-        var b = Math.min(stops.length - 1, a + 1);
-        var t = seg - a;
-        var r = Math.round(stops[a][0] + (stops[b][0] - stops[a][0]) * t);
-        var g = Math.round(stops[a][1] + (stops[b][1] - stops[a][1]) * t);
-        var bl = Math.round(stops[a][2] + (stops[b][2] - stops[a][2]) * t);
-        chars[i].style.color = 'rgb(' + r + ', ' + g + ', ' + bl + ')';
+    /**
+     * 入场写字：不再让整字淡入，而是按笔顺一笔一笔描出来。
+     * 中文用笔画中线数据，拉丁字母用手写的单线笔迹；
+     * 每一笔从起笔到收笔沿中线推进，落笔顺序和真实写字一致。
+     */
+    var STROKE_FILES = {
+      欢: 'huan',
+      迎: 'ying',
+      来: 'lai',
+      到: 'dao',
+      的: 'de',
+      小: 'xiao',
+      世: 'shi',
+      界: 'jie',
+    };
+
+    // 拉丁字母的单线笔迹：w 是字宽（em），strokes 是每一笔的归一化坐标（0~1）
+    var LATIN = {
+      S: { w: 0.56, strokes: [[[0.5, 0.06], [0.3, 0.08], [0.17, 0.24], [0.22, 0.42], [0.38, 0.54], [0.42, 0.68], [0.32, 0.84], [0.14, 0.9]]] },
+      h: { w: 0.54, strokes: [[[0.2, 0.04], [0.2, 0.96]], [[0.2, 0.44], [0.34, 0.34], [0.46, 0.42], [0.46, 0.96]]] },
+      a: { w: 0.54, strokes: [[[0.46, 0.42], [0.28, 0.38], [0.15, 0.56], [0.22, 0.82], [0.38, 0.94], [0.48, 0.8], [0.47, 0.42]], [[0.47, 0.42], [0.47, 0.96]]] },
+      l: { w: 0.34, strokes: [[[0.26, 0.04], [0.26, 0.9], [0.42, 0.98]]] },
+      o: { w: 0.56, strokes: [[[0.32, 0.42], [0.16, 0.56], [0.2, 0.8], [0.38, 0.94], [0.5, 0.78], [0.44, 0.46], [0.32, 0.42]]] },
+      w: { w: 0.76, strokes: [[[0.05, 0.42], [0.22, 0.96], [0.38, 0.58], [0.55, 0.96], [0.72, 0.42]]] },
+      r: { w: 0.4, strokes: [[[0.18, 0.96], [0.18, 0.42]], [[0.18, 0.54], [0.3, 0.38], [0.42, 0.42]]] },
+      d: { w: 0.56, strokes: [[[0.46, 0.42], [0.28, 0.38], [0.15, 0.56], [0.22, 0.82], [0.38, 0.94], [0.48, 0.8], [0.47, 0.42]], [[0.47, 0.04], [0.47, 0.96]]] },
+      t: { w: 0.44, strokes: [[[0.26, 0.06], [0.26, 0.84], [0.42, 0.96]], [[0.1, 0.4], [0.42, 0.4]]] },
+    };
+
+    function loadStrokes() {
+      var chars = Object.keys(STROKE_FILES);
+      return Promise.all(
+        chars.map(function (ch) {
+          return fetch('/strokes/' + STROKE_FILES[ch] + '.json')
+            .then(function (r) {
+              return r.json();
+            })
+            .then(function (data) {
+              strokeData[ch] = { medians: data.medians, strokes: data.strokes };
+            });
+        })
+      );
+    }
+    var strokeData = {};
+
+    function segLen(a, b) {
+      var dx = b[0] - a[0];
+      var dy = b[1] - a[1];
+      return Math.sqrt(dx * dx + dy * dy);
+    }
+
+    /** 把手写的折线点串成顺滑曲线，避免字形一节一节的 */
+    function smoothPts(pts) {
+      if (pts.length < 3) return pts;
+      var out = [];
+      for (var i = 0; i < pts.length - 1; i += 1) {
+        var p0 = pts[i - 1] || pts[i];
+        var p1 = pts[i];
+        var p2 = pts[i + 1];
+        var p3 = pts[i + 2] || p2;
+        for (var j = 0; j < 7; j += 1) {
+          var t = j / 7;
+          var t2 = t * t;
+          var t3 = t2 * t;
+          out.push([
+            0.5 * (2 * p1[0] + (-p0[0] + p2[0]) * t + (2 * p0[0] - 5 * p1[0] + 4 * p2[0] - p3[0]) * t2 + (-p0[0] + 3 * p1[0] - 3 * p2[0] + p3[0]) * t3),
+            0.5 * (2 * p1[1] + (-p0[1] + p2[1]) * t + (2 * p0[1] - 5 * p1[1] + 4 * p2[1] - p3[1]) * t2 + (-p0[1] + 3 * p1[1] - 3 * p2[1] + p3[1]) * t3),
+          ]);
+        }
+      }
+      out.push(pts[pts.length - 1]);
+      return out;
+    }
+
+    /** 把一行字排成笔画清单：每个字有自己的宽度和若干笔，笔画都换算成画布坐标 */
+    function buildLine(el, text, color, bold) {
+      var rect = el.getBoundingClientRect();
+      var size = parseFloat(getComputedStyle(el).fontSize);
+      var dpr = Math.min(window.devicePixelRatio || 1, 2);
+      var cvs = document.createElement('canvas');
+      cvs.width = Math.max(1, Math.round(rect.width * dpr));
+      cvs.height = Math.max(1, Math.round(rect.height * dpr));
+      cvs.style.cssText =
+        'position:absolute;left:0;top:0;width:' + rect.width + 'px;height:' + rect.height + 'px;pointer-events:none;';
+      el.style.position = 'relative';
+      el.style.color = 'transparent';
+      el.appendChild(cvs);
+      var ctx = cvs.getContext('2d');
+      ctx.scale(dpr, dpr);
+      ctx.strokeStyle = color;
+      ctx.fillStyle = color;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+
+      // 先算字宽总和，好把整行居中
+      var glyphs = [];
+      var totalAdv = 0;
+      for (var i = 0; i < text.length; i += 1) {
+        var ch = text.charAt(i);
+        var advance = size;
+        if (ch === ' ') {
+          advance = size * 0.3;
+          glyphs.push({ ch: ch, advance: advance, latin: null });
+        } else if (LATIN[ch]) {
+          advance = LATIN[ch].w * size;
+          glyphs.push({ ch: ch, advance: advance, latin: LATIN[ch] });
+        } else {
+          glyphs.push({ ch: ch, advance: advance, latin: null });
+        }
+        totalAdv += advance;
+      }
+
+      var startX = (rect.width - totalAdv) / 2;
+      var top = (rect.height - size) / 2;
+      var strokes = [];
+      var penX = startX;
+
+      glyphs.forEach(function (g) {
+        if (g.ch === ' ') {
+          penX += g.advance;
+          return;
+        }
+        var ppm;
+        if (g.latin) {
+          ppm = g.advance; // 拉丁：x 用字宽折算
+          g.latin.strokes.forEach(function (pts) {
+            var scaled = pts.map(function (p) {
+              return [penX + p[0] * ppm, top + p[1] * size];
+            });
+            strokes.push({ pts: smoothPts(scaled), width: Math.max(1.8, size * (bold ? 0.078 : 0.062)) });
+          });
+        } else {
+          var glyph = strokeData[g.ch];
+          if (!glyph) return;
+          ppm = size / 1024;
+          // 中文用笔画外框：先按笔顺裁出一条笔锋扫过的区域，再把这一笔填进去，
+          // 所以字形是完整的，不是只有一条中线
+          glyph.medians.forEach(function (pts, idx) {
+            var scaled = pts.map(function (p) {
+              return [penX + p[0] * ppm, top + (1024 - p[1]) * ppm];
+            });
+            strokes.push({
+              type: 'shape',
+              pts: scaled,
+              outline: new Path2D(glyph.strokes[idx] || ''),
+              tx: penX,
+              ty: top + size,
+              ppm: ppm,
+            });
+          });
+        }
+        penX += g.advance;
+      });
+
+      // 每笔按长度排队，长的笔画自然写久一点
+      var totalLen = 0;
+      strokes.forEach(function (s) {
+        var lens = [];
+        var len = 0;
+        for (var k = 1; k < s.pts.length; k += 1) {
+          var l = segLen(s.pts[k - 1], s.pts[k]);
+          lens.push(l);
+          len += l;
+        }
+        if (len < 1) len = 1;
+        s.segs = lens;
+        s.len = len;
+        s.start = totalLen;
+        totalLen += len;
+      });
+
+      return { ctx: ctx, w: rect.width, h: rect.height, strokes: strokes, totalLen: totalLen };
+    }
+
+    /** 沿中线裁出一条笔锋扫过的窄带，用来只露出正在写的那一笔 */
+    function clipBand(ctx, s, p, r) {
+      var target = p * s.len;
+      var walked = 0;
+      ctx.beginPath();
+      for (var k = 1; k < s.pts.length; k += 1) {
+        var a = s.pts[k - 1];
+        var b = s.pts[k];
+        var seg = s.segs[k - 1];
+        if (seg <= 0) continue;
+        var f = Math.min(1, (target - walked) / seg);
+        if (f <= 0) break;
+        var x2 = a[0] + (b[0] - a[0]) * f;
+        var y2 = a[1] + (b[1] - a[1]) * f;
+        var nx = -((b[1] - a[1]) / seg) * r;
+        var ny = ((b[0] - a[0]) / seg) * r;
+        ctx.moveTo(a[0] + nx, a[1] + ny);
+        ctx.lineTo(x2 + nx, y2 + ny);
+        ctx.lineTo(x2 - nx, y2 - ny);
+        ctx.lineTo(a[0] - nx, a[1] - ny);
+        ctx.closePath();
+        walked += seg;
+        if (f < 1) break;
+      }
+      ctx.clip();
+    }
+
+    /** 画到第 walked 像素处：已经走过的笔画全画，当前这一笔只画到笔尖 */
+    function drawLine(view, walked) {
+      view.ctx.clearRect(0, 0, view.w, view.h);
+      for (var i = 0; i < view.strokes.length; i += 1) {
+        var s = view.strokes[i];
+        if (walked <= s.start) break;
+        var p = Math.min(1, (walked - s.start) / s.len);
+
+        if (s.type === 'shape') {
+          view.ctx.save();
+          clipBand(view.ctx, s, p, Math.max(2, s.ppm * 80));
+          view.ctx.translate(s.tx, s.ty);
+          view.ctx.scale(s.ppm, -s.ppm);
+          view.ctx.fill(s.outline);
+          view.ctx.restore();
+          continue;
+        }
+
+        var target = p * s.len;
+        var drawn = 0;
+        view.ctx.lineWidth = s.width;
+        view.ctx.beginPath();
+        view.ctx.moveTo(s.pts[0][0], s.pts[0][1]);
+        for (var k = 1; k < s.pts.length; k += 1) {
+          var seg = s.segs[k - 1];
+          if (drawn + seg <= target) {
+            view.ctx.lineTo(s.pts[k][0], s.pts[k][1]);
+            drawn += seg;
+          } else {
+            var f = seg > 0 ? (target - drawn) / seg : 0;
+            view.ctx.lineTo(
+              s.pts[k - 1][0] + (s.pts[k][0] - s.pts[k - 1][0]) * f,
+              s.pts[k - 1][1] + (s.pts[k][1] - s.pts[k - 1][1]) * f
+            );
+            break;
+          }
+        }
+        view.ctx.stroke();
       }
     }
 
-    function start() {
-      var helloChars = splitChars(hello);
-      var brandChars = splitChars(brandEl);
-      var nameChars = splitChars(nameEl);
-      paintWash(brandChars);
+    /** 一行在 duration 毫秒内按笔顺写完 */
+    function writeLine(view, duration) {
+      return new Promise(function (resolve) {
+        var t0 = performance.now();
+        function frame(now) {
+          var p = Math.min(1, (now - t0) / duration);
+          drawLine(view, view.totalLen * p);
+          if (p < 1) {
+            requestAnimationFrame(frame);
+          } else {
+            resolve();
+          }
+        }
+        drawLine(view, 0);
+        requestAnimationFrame(frame);
+      });
+    }
 
-      write(helloChars, 105)
+    /** 一笔写完，就让画布淡出、露出这一行真正的字，落定成站点字体 */
+    function settleLine(el, view) {
+      el.style.color = '';
+      var cvs = view.ctx.canvas;
+      cvs.style.transition = 'opacity 220ms linear';
+      cvs.style.opacity = '0';
+      setTimeout(function () {
+        if (cvs.parentNode) cvs.parentNode.removeChild(cvs);
+      }, 260);
+    }
+
+    function start() {
+      var colorHello = getComputedStyle(hello).color;
+      var colorBrand = getComputedStyle(brandEl).color;
+      var colorName = getComputedStyle(nameEl).color;
+
+      loadStrokes()
         .then(function () {
-          return delay(150);
+          var vHello = buildLine(hello, hello.textContent, colorHello, false);
+          var vBrand = buildLine(brandEl, brandEl.textContent, colorBrand, true);
+          var vName = buildLine(nameEl, nameEl.textContent, colorName, false);
+          return writeLine(vHello, 1000)
+            .then(function () {
+              settleLine(hello, vHello);
+              return delay(200);
+            })
+            .then(function () {
+              return writeLine(vBrand, 1150);
+            })
+            .then(function () {
+              settleLine(brandEl, vBrand);
+              return delay(240);
+            })
+            .then(function () {
+              return writeLine(vName, 1450);
+            })
+            .then(function () {
+              settleLine(nameEl, vName);
+            });;
         })
         .then(function () {
-          return write(brandChars, 90);
+          return delay(350);
         })
-        .then(function () {
-          return delay(170);
-        })
-        .then(function () {
-          return write(nameChars, 66);
-        })
-        .then(function () {
-          return delay(420);
-        })
-        .then(beginLand);
+        .then(beginLand)
+        .catch(function () {
+          // 笔画数据没取到就退化成静态入场，别把页面卡住
+          intro.remove();
+          doc.classList.remove('intro-on');
+          h1.style.opacity = '1';
+          lead.style.opacity = '1';
+        });
     }
 
     // 等字体到位再量位置，最多等 700ms，避免用正楷量、行楷显示
