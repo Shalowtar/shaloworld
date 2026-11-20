@@ -171,19 +171,26 @@ import { SITE } from '../consts';
       return segReady;
     }
 
+    /** 拼出 canvas / document.fonts 都能用的字体简写 */
+    function fontSpec(el) {
+      var style = getComputedStyle(el);
+      return (
+        (style.fontStyle && style.fontStyle !== 'normal' ? style.fontStyle + ' ' : '') +
+        (style.fontWeight || '400') +
+        ' ' +
+        style.fontSize +
+        ' ' +
+        style.fontFamily
+      );
+    }
+
     function buildLine(el, text, color) {
       var rect = el.getBoundingClientRect();
       var style = getComputedStyle(el);
       var size = parseFloat(style.fontSize);
       var ls = parseFloat(style.letterSpacing) || 0;
       var dpr = Math.min(window.devicePixelRatio || 1, 2);
-      var font =
-        (style.fontStyle && style.fontStyle !== 'normal' ? style.fontStyle + ' ' : '') +
-        (style.fontWeight || '400') +
-        ' ' +
-        style.fontSize +
-        ' ' +
-        style.fontFamily;
+      var font = fontSpec(el);
 
       // 画布四周留余量，字形的起笔、捺脚和字母外伸都画得下
       var pad = Math.max(8, Math.round(size * 0.36));
@@ -199,7 +206,7 @@ import { SITE } from '../consts';
         (rect.width + pad * 2) +
         'px;height:' +
         (rect.height + pad * 2) +
-        'px;pointer-events:none;';
+        'px;pointer-events:none;letter-spacing:0;word-spacing:0;';
       el.style.position = 'relative';
       el.appendChild(cvs);
 
@@ -207,6 +214,9 @@ import { SITE } from '../consts';
       ctx.scale(dpr, dpr);
       ctx.textBaseline = 'alphabetic';
       ctx.font = font;
+      // 画布挂在带 letter-spacing 的标题里，这层 CSS 会被画布继承，
+      // 导致 measureText 每个字都多算一份字距；这里清零，字距由下面手动排
+      if ('letterSpacing' in ctx) ctx.letterSpacing = '0px';
 
       // 同尺寸的遮罩画布：每一帧把已经写到的笔画画进来，
       // 再用它把整行字裁出来，所以笔画边缘、粗细始终和页面字体一致
@@ -236,7 +246,6 @@ import { SITE } from '../consts';
         glyphs[g].x = penX;
         penX += glyphs[g].w + ls;
       }
-
       // 笔画块是 1000 单位字身框里的坐标，按字号缩放后贴到基线位置
       var scale = size / 1000;
       var strokes = [];
@@ -300,6 +309,7 @@ import { SITE } from '../consts';
     function paintText(view) {
       var ctx = view.ctx;
       ctx.font = view.font;
+      if ('letterSpacing' in ctx) ctx.letterSpacing = '0px';
       ctx.fillStyle = view.color;
       ctx.textBaseline = 'alphabetic';
       for (var i = 0; i < view.glyphs.length; i += 1) {
@@ -443,7 +453,26 @@ import { SITE } from '../consts';
       var inkSoft = rootStyle.getPropertyValue('--ink-soft').trim() || '#4a4a4a';
       var accent = rootStyle.getPropertyValue('--accent').trim() || '#943726';
 
-      loadSegments()
+      // 入场文字在 CSS 里是透明的，浏览器可能不去加载对应的文楷分片，
+      // 画布就会退回系统字体，和笔画遮罩对不上。先按实际文案把字面量加载齐
+      var introFonts = Promise.all(
+        [hello, brandEl, nameEl].map(function (el) {
+          if (!document.fonts || !document.fonts.load) return Promise.resolve();
+          return document.fonts.load(fontSpec(el), el.textContent).catch(function () {});
+        })
+      );
+
+      introFonts
+        .then(function () {
+          // 字体到齐后浏览器还要重排一次，等两帧再量宽高，
+          // 否则画布会按回退字体的旧宽度居中
+          return new Promise(function (resolve) {
+            requestAnimationFrame(function () {
+              requestAnimationFrame(resolve);
+            });
+          });
+        })
+        .then(loadSegments)
         .then(function () {
           var vHello = buildLine(hello, hello.textContent, inkSoft);
           var vBrand = buildLine(brandEl, brandEl.textContent, accent);
