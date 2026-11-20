@@ -536,8 +536,8 @@ html.intro-on .hero-actions {
   letter-spacing: 0.22em;
   color: var(--ink-soft);
   transition:
-    opacity 500ms ease,
-    transform 500ms ease;
+    opacity 220ms ease,
+    transform 220ms ease;
 }
 /* 站名：与首页 h1 同款字形与行高，缩进去时才能对得上 */
 .intro-brand {
