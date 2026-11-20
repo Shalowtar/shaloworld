@@ -471,6 +471,7 @@ ol {
 .hero .lead {
   max-width: 54ch;
   margin: 0 0 26px;
+  font-family: var(--font-display);
   font-size: 1.04rem;
   line-height: 1.95;
   color: var(--ink-soft);
@@ -549,10 +550,10 @@ html.intro-on .hero-actions {
   transform-origin: center center;
   will-change: transform;
 }
-/* 与首页 .lead 同一款字形、同一行高，收进去时才能严丝合缝 */
+/* 与画布上的笔画同源，书写过程中不会出现两套字形叠在一起 */
 .intro-name {
   margin: 0;
-  font-family: var(--font-serif);
+  font-family: var(--font-display);
   font-size: clamp(1.7rem, 5vw, 3rem);
   line-height: 1.95;
   letter-spacing: 0;

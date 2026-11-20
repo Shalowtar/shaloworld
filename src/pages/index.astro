@@ -117,18 +117,16 @@ import { SITE } from '../consts';
       bg.style.transition = 'opacity 900ms cubic-bezier(.22,.61,.24,1)';
       bg.style.opacity = '0';
 
-      brandEl.style.transition = 'opacity 320ms linear';
-      nameEl.style.transition = 'opacity 320ms linear';
-      brandEl.style.opacity = '0';
-      nameEl.style.opacity = '0';
-
-      h1.style.transition = 'opacity 620ms cubic-bezier(.22,.61,.24,1)';
-      lead.style.transition = 'opacity 620ms cubic-bezier(.22,.61,.24,1)';
-      h1.style.opacity = '1';
-      lead.style.opacity = '1';
-
+      // 页头、页脚和按钮在这一层下面慢慢浮出来；大字先留在原位，
+      // 等背景完全透明，再用首页标题和那一行原地换掉，同字同号，看不出切换
       doc.classList.remove('intro-on');
-      setTimeout(finish, 980);
+      setTimeout(function () {
+        h1.style.transition = 'none';
+        lead.style.transition = 'none';
+        h1.style.opacity = '1';
+        lead.style.opacity = '1';
+        finish();
+      }, 900);
     }
 
     /**
@@ -228,22 +226,21 @@ import { SITE } from '../consts';
       var desc = met.fontBoundingBoxDescent || size * 0.22;
       var baseline = pad + (rect.height - (asc + desc)) / 2 + asc;
 
-      // 逐字排版，位置和字距跟 CSS 保持一致
+      // 逐字排版，位置和字距跟 CSS 保持一致；
+      // CSS 的 letter-spacing 在最后一个字后面也会留一份，量宽度时要算进去
       var glyphs = [];
-      var widths = [];
       var totalW = 0;
       for (var i = 0; i < text.length; i += 1) {
         var ch = text.charAt(i);
         var w = ctx.measureText(ch).width;
-        widths.push(w);
-        totalW += w + (i < text.length - 1 ? ls : 0);
+        totalW += w + ls;
         glyphs.push({ ch: ch, w: w, space: ch === ' ' });
       }
       var startX = pad + (rect.width - totalW) / 2;
       var penX = startX;
       for (var g = 0; g < glyphs.length; g += 1) {
         glyphs[g].x = penX;
-        penX += glyphs[g].w + (g < glyphs.length - 1 ? ls : 0);
+        penX += glyphs[g].w + ls;
       }
 
       // 笔画块是 1000 单位字身框里的坐标，按字号缩放后贴到基线位置
@@ -277,36 +274,20 @@ import { SITE } from '../consts';
 
       return {
         ctx: ctx,
+        cvs: cvs,
+        el: el,
         w: rect.width + pad * 2,
         h: rect.height + pad * 2,
-        font: font,
         color: color,
-        baseline: baseline,
-        glyphs: glyphs,
         strokes: strokes,
         total: total || 1,
       };
     }
 
-    /** 用最终字体把整行字画出来，收笔时用来补齐笔画之间的接缝 */
-    function paintGlyphs(view, target, color, alpha) {
-      target.save();
-      target.globalAlpha = alpha == null ? 1 : alpha;
-      target.font = view.font;
-      target.fillStyle = color;
-      target.textBaseline = 'alphabetic';
-      for (var i = 0; i < view.glyphs.length; i += 1) {
-        var gl = view.glyphs[i];
-        if (!gl.space) target.fillText(gl.ch, gl.x, view.baseline);
-      }
-      target.restore();
-    }
-
     /** 这一笔写到 q（0~1）：沿起笔到收笔的方向把这一整块笔画推出来 */
-    function drawStroke(view, s, q, alpha) {
+    function drawStroke(view, s, q) {
       var ctx = view.ctx;
       ctx.save();
-      ctx.globalAlpha = alpha;
       if (q >= 1) {
         ctx.drawImage(s.img, s.x, s.y, s.w, s.h);
         ctx.restore();
@@ -369,14 +350,21 @@ import { SITE } from '../consts';
         if (vis <= s.start) break;
         var q = Math.min(1, (vis - s.start) / s.wt);
         // 每一笔从起笔方向推出来，切口落在笔画自身形状里
-        drawStroke(view, s, q, 1);
+        drawStroke(view, s, q);
       }
+    }
 
-      // 最后一瞬用同一字体的完整字形收口，把笔画接缝抹平；
-      // 因为字形完全一致，看不出替换
-      if (p > 0.97) {
-        paintGlyphs(view, ctx, view.color, (p - 0.97) / 0.03);
-      }
+    /** 写完交还给页面上真正的文字：字形、字重和最终完全一致 */
+    function settleLine(view) {
+      view.el.style.color = view.color;
+      var cvs = view.cvs;
+      cvs.style.transition = 'opacity 120ms linear';
+      requestAnimationFrame(function () {
+        cvs.style.opacity = '0';
+      });
+      setTimeout(function () {
+        if (cvs.parentNode) cvs.parentNode.removeChild(cvs);
+      }, 160);
     }
 
     /** 一行在 duration 毫秒内按笔顺写完 */
@@ -389,6 +377,7 @@ import { SITE } from '../consts';
           if (p < 1) {
             requestAnimationFrame(frame);
           } else {
+            settleLine(view);
             resolve();
           }
         }
@@ -401,15 +390,12 @@ import { SITE } from '../consts';
       var rootStyle = getComputedStyle(document.documentElement);
       var inkSoft = rootStyle.getPropertyValue('--ink-soft').trim() || '#4a4a4a';
       var accent = rootStyle.getPropertyValue('--accent').trim() || '#943726';
-      var colorHello = inkSoft;
-      var colorBrand = accent;
-      var colorName = inkSoft;
 
       loadSegments()
         .then(function () {
-          var vHello = buildLine(hello, hello.textContent, colorHello);
-          var vBrand = buildLine(brandEl, brandEl.textContent, colorBrand);
-          var vName = buildLine(nameEl, nameEl.textContent, colorName);
+          var vHello = buildLine(hello, hello.textContent, inkSoft);
+          var vBrand = buildLine(brandEl, brandEl.textContent, accent);
+          var vName = buildLine(nameEl, nameEl.textContent, inkSoft);
           return writeLine(vHello, 900)
             .then(function () {
               return delay(140);
