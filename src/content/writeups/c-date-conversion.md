@@ -230,12 +230,10 @@ int main()
 
 ```c
 #include <stdio.h>
-
-int z[13] = { 0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
+int z[13] = { 0,31,28,31,30,31,30,31,31,30,31,30,31 };
 int date_0;
 int month;
-
-int date(int a1)                     /* 传入年份，生成对应每个月的天数 */
+int date(int a1) //传入年份，生成对应的月的日期数
 {
     if ((a1 % 4 == 0 && a1 % 100 != 0) || a1 % 400 == 0)
     {
@@ -247,8 +245,7 @@ int date(int a1)                     /* 传入年份，生成对应每个月的�
     }
     return 0;
 }
-
-int calc(int a1, int a2)             /* 传入年份 a1，传入天数 a2 */
+int calc(int a1, int a2) //传入年份a1,传入天数a2
 {
     int j = 1;
     int a = a2;
@@ -261,41 +258,28 @@ int calc(int a1, int a2)             /* 传入年份 a1，传入天数 a2 */
     date_0 = a;
     return 0;
 }
-
 int main()
 {
     while (1)
     {
-        int a;                       /* 年份 */
-        int b;                       /* 月份 */
-        int c;                       /* 日期 */
+        int a;   //年份
+        int b;   //月份
+        int c;   //日期
         int d = 0;
-        int e;                       /* 天数 */
-        int x;                       /* 初始输入方向 */
-        char line[64];
-
+        int e;   //天数
+        int x;   //初始输入方向
         putchar('\n');
         printf("选择你想要做的计算\n1.月份日期转换成天数\n2.指定年份和第几天求出日期\n输入1或2进行选择\n");
-
-        if (fgets(line, sizeof line, stdin) == NULL)        /* 输入结束 / EOF */
-            return 1;
-
-        if (sscanf_s(line, "%d", &x) != 1)
-        {
-            printf("不是数字，请重新输入\n");
-            continue;
-        }
-
+        scanf_s("%d", &x);
         if (x != 1 && x != 2)
         {
             printf("只能输入1或2哦\n");
-            continue;
         }
         else
         {
             switch (x)
             {
-            case 1:
+            case(1):
                 printf("请输入年份\n");
                 scanf_s("%d", &a);
                 if (a <= 0)
@@ -321,7 +305,7 @@ int main()
                         }
                         else
                         {
-                            for (int i = 1; i < b; ++i)
+                            for (int i = 1;i < b;++i)
                             {
                                 d += z[i];
                             }
@@ -331,28 +315,25 @@ int main()
                     }
                 }
                 break;
-
-            case 2:
+            case(2):
                 printf("请输入年份\n");
                 scanf_s("%d", &a);
                 if (a <= 0)
                 {
                     printf("你输入的年份有问题\n");
+                    break;
                 }
                 else
                 {
                     date(a);
                     printf("请输入天数\n");
                     scanf_s("%d", &c);
-                    {
-                        int ch;
-                        while ((ch = getchar()) != '\n' && ch != EOF) {}
-                    }
                     if ((a % 4 == 0 && a % 100 != 0) || a % 400 == 0)
                     {
                         if (c <= 0 || c > 366)
                         {
                             printf("你输入的天数不对");
+                            break;
                         }
                         else
                         {
@@ -365,6 +346,7 @@ int main()
                         if (c <= 0 || c > 365)
                         {
                             printf("你输入的天数不对");
+                            break;
                         }
                         else
                         {
@@ -376,7 +358,6 @@ int main()
                 break;
             }
         }
-
         putchar('\n');
     }
     return 0;
