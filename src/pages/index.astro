@@ -454,42 +454,53 @@ import { SITE } from '../consts';
       var accent = rootStyle.getPropertyValue('--accent').trim() || '#943726';
 
       // 入场文字在 CSS 里是透明的，浏览器可能不去加载对应的文楷分片，
-      // 画布就会退回系统字体，和笔画遮罩对不上。先按实际文案把字面量加载齐
-      var introFonts = Promise.all(
-        [hello, brandEl, nameEl].map(function (el) {
-          if (!document.fonts || !document.fonts.load) return Promise.resolve();
-          return document.fonts.load(fontSpec(el), el.textContent).catch(function () {});
-        })
-      );
+      // 画布就会退回系统字体，和笔画遮罩对不上。按行分别预加载：
+      // 欢迎语先写，品牌和名字的字体在它书写时并行加载
+      function loadFont(el) {
+        if (!document.fonts || !document.fonts.load) return Promise.resolve();
+        return document.fonts.load(fontSpec(el), el.textContent).catch(function () {});
+      }
 
-      introFonts
-        .then(function () {
-          // 字体到齐后浏览器还要重排一次，等两帧再量宽高，
-          // 否则画布会按回退字体的旧宽度居中
-          return new Promise(function (resolve) {
-            requestAnimationFrame(function () {
-              requestAnimationFrame(resolve);
-            });
+      // 字体到齐后浏览器还要重排一次，等两帧再量宽高
+      function settle() {
+        return new Promise(function (resolve) {
+          requestAnimationFrame(function () {
+            requestAnimationFrame(resolve);
           });
+        });
+      }
+
+      var segmentsReady = loadSegments();
+      var helloFont = loadFont(hello);
+      var brandFont = loadFont(brandEl);
+      var nameFont = loadFont(nameEl);
+
+      helloFont
+        .then(settle)
+        .then(function () {
+          return segmentsReady;
         })
-        .then(loadSegments)
         .then(function () {
           var vHello = buildLine(hello, hello.textContent, inkSoft);
+          return writeLine(vHello, 900).then(function () {
+            return delay(140);
+          });
+        })
+        .then(function () {
+          return brandFont.then(settle);
+        })
+        .then(function () {
           var vBrand = buildLine(brandEl, brandEl.textContent, accent);
+          return writeLine(vBrand, 1200).then(function () {
+            return delay(160);
+          });
+        })
+        .then(function () {
+          return nameFont.then(settle);
+        })
+        .then(function () {
           var vName = buildLine(nameEl, nameEl.textContent, inkSoft);
-          return writeLine(vHello, 900)
-            .then(function () {
-              return delay(140);
-            })
-            .then(function () {
-              return writeLine(vBrand, 1200);
-            })
-            .then(function () {
-              return delay(160);
-            })
-            .then(function () {
-              return writeLine(vName, 1500);
-            });
+          return writeLine(vName, 1500);
         })
         .then(function () {
           // 全部写完，先让字安安静静展示半秒
@@ -505,12 +516,7 @@ import { SITE } from '../consts';
         });
     }
 
-    // 等字体到位再量位置，最多等 700ms，避免用正楷量、行楷显示
-    Promise.race([
-      document.fonts ? document.fonts.ready : Promise.resolve(),
-      new Promise(function (r) {
-        setTimeout(r, 700);
-      }),
-    ]).then(start);
+    // 字体在 start 内按行加载，这里直接开场，避免等待 document.fonts.ready 白屏
+    start();
   })();
 </script>
