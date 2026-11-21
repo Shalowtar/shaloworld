@@ -2010,6 +2010,7 @@ html[data-pop="on"] .toc {
   background: none;
   cursor: pointer;
   text-align: left;
+  text-decoration: none;
   font-family: var(--font-display);
   font-size: 1.8rem;
   letter-spacing: 0.02em;
@@ -2022,14 +2023,17 @@ html[data-pop="on"] .toc {
 .dir-group-head:hover .dir-group-name {
   color: var(--accent);
 }
-.dir-group-head.is-static {
-  cursor: default;
+.dir-group-go {
+  font-family: var(--font-ui);
+  font-size: 0.9rem;
+  line-height: 1;
+  color: var(--ink-soft);
+  opacity: 0.8;
+  transition: color 0.15s, transform 0.15s;
 }
-.dir-group-head.is-static:hover {
-  border-bottom-color: var(--rule);
-}
-.dir-group-head.is-static:hover .dir-group-name {
-  color: var(--ink-strong);
+.dir-group-head:hover .dir-group-go {
+  color: var(--accent);
+  transform: translateX(3px);
 }
 .dir-group-no {
   font-family: var(--font-ui);
