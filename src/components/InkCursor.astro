@@ -494,7 +494,6 @@
 
     function hitTest(target) {
       if (!target || !target.closest) return null;
-      if (target.closest('[data-no-ink]')) return null;
       return target.closest('a, button, input, select, textarea, .chip, .flag-btn, .lightbox');
     }
 

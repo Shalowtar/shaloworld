@@ -52,21 +52,21 @@ const lastUpdate = latestPost ? latestPost.data.updatedAt ?? latestPost.data.pub
         </div>
 
         <div class="stats stats-about">
-          <a class="stat" data-no-ink href="/writeups/" aria-label={`查看全部 ${all.length} 篇文章`}>
+          <a class="stat" href="/writeups/" aria-label={`查看全部 ${all.length} 篇文章`}>
             <b>{all.length}</b>
             <span class="stat-label">文章<span class="stat-arrow" aria-hidden="true">↗</span></span>
           </a>
-          <a class="stat" data-no-ink href="/tags/#tags" aria-label={`查看 ${tags.length} 个标签`}>
+          <a class="stat" href="/tags/#tags" aria-label={`查看 ${tags.length} 个标签`}>
             <b>{tags.length}</b>
             <span class="stat-label">标签<span class="stat-arrow" aria-hidden="true">↗</span></span>
           </a>
-          <a class="stat" data-no-ink href="/tags/#categories" aria-label={`查看 ${cats.length} 个分类`}>
+          <a class="stat" href="/tags/#categories" aria-label={`查看 ${cats.length} 个分类`}>
             <b>{cats.length}</b>
             <span class="stat-label">分类<span class="stat-arrow" aria-hidden="true">↗</span></span>
           </a>
           <a
             class="stat"
-            data-no-ink
+            data-ink-pad="5"
             href={latestPost ? `/writeups/${latestPost.id}/` : '/writeups/'}
             aria-label={latestPost ? `查看最近更新的文章：${latestPost.data.title}` : '查看文章'}
           >
