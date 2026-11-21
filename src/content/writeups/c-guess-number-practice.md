@@ -2,7 +2,8 @@
 title: 'C 语言练习 · 随便写的猜数字'
 summary: '第一次用 rand 和 srand 写了个猜幸运数字的小程序，顺便踩了“忘记播种”的坑。'
 category: C
-tags: ['C语言学习']
+subcategories: ['练习']
+tags: ['C语言学习', 'C语言练习']
 publishedAt: 2026-11-18T22:00:00+08:00
 ---
 
