@@ -3,7 +3,7 @@ title: 'C 语言学习二 · 条件和循环'
 summary: '练条件和循环的一版小程序：中途踩到 scanf_s 用 %d 去读 long long 的坑，最后自己把反复输入的循环改通了。'
 category: C
 subcategories: ['学习']
-tags: ['C语言学习']
+tags: ['C语言']
 publishedAt: 2026-11-19T00:05:00+08:00
 ---
 

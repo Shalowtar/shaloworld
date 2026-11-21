@@ -4,7 +4,7 @@ summary: '第一次不靠 AI 自己写解密：把 IDA 里抠出来的加密逻�
 event: 'SparkCTF'
 category: Reverse
 subcategories: ['SparkCTF2026', 'week2']
-tags: ['逆向', 'C语言学习', 'SparkCTF2026']
+tags: ['逆向', 'C语言', 'SparkCTF2026']
 publishedAt: 2026-11-19T02:05:00+08:00
 tools: ['IDA']
 ---

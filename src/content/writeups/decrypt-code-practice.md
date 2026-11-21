@@ -3,7 +3,7 @@ title: '一个解密代码'
 summary: 'moectf 的一道逆向题：反编译出一段循环里做异或与移位的加密，自己写解密函数还原数据，再用 x64dbg 动调验证结果。'
 category: Reverse
 subcategories: ['其他']
-tags: ['C语言学习', '逆向']
+tags: ['C语言', '逆向']
 publishedAt: 2026-11-18T21:30:00+08:00
 tools: ['IDA', 'x64dbg']
 ---
