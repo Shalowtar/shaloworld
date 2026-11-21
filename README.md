@@ -241,7 +241,7 @@ blog/
 
 **做法 B：只在注册商加解析记录**
 在 DNS 记录里加：
-- `CNAME` `www` → `shalowworld.pages.dev`
+- `CNAME` `www` → `shaloworld.pages.dev`
 - 根域 `shalowtar.com`：Cloudflare Pages / Vercel 都支持根域 CNAME 展平，按平台提示填即可；若注册商不支持根域 CNAME，就用 `A` 记录指向平台给的 IP
 
 HTTPS 由平台自动签发，通常几分钟生效，不用自己搞证书。生效后 `https://shalowtar.com` 就能被任何设备打开。
