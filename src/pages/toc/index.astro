@@ -4,6 +4,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 import DirPost, { type DirPostData } from '../../components/DirPost.astro';
 import { getCollection, render } from 'astro:content';
 import { CATEGORIES, SUBCATEGORY_ORDER } from '../../consts';
+import { PROJECTS } from '../../data/projects';
 import { visiblePosts } from '../../utils/posts';
 
 /* 目录总页：大分类 → 子分类 → 文章 → 章节；默认全部折叠 */
@@ -112,87 +113,197 @@ groups.sort((a, b) => b.latest - a.latest);
 const totalPosts = all.length;
 ---
 
-<BaseLayout title="目录" description="按分类整理的站点目录：分类、文章、章节一路点进去。">
+<BaseLayout title="目录" description="按分区整理的站点目录：项目、学习、其他、关于，一层层点进去。">
   <div class="wrap toc-page">
     <section class="article-top">
       <Breadcrumb segments={[{ label: 'toc' }]} />
       <h1>目录</h1>
       <div class="article-meta">
-        <span>{groups.length} 个分类</span>
+        <span>4 个分区</span>
         <span>{totalPosts} 篇文章</span>
         <span class="dir-hint">单击展开 · 双击跳转</span>
       </div>
     </section>
 
     <div class="dir-page">
-      {
-        groups.map((g) => (
-          <section class="dir-cat">
-            <button
-              class="dir-cat-head"
-              type="button"
-              data-dir-toggle
-              data-href={`/writeups/?cat=${encodeURIComponent(g.name)}`}
-              aria-expanded="false"
-            >
-              <span class="dir-cat-name cat-tone" data-cat={g.name}>{g.name}</span>
-              <span class="dir-cat-meta">{g.count} 篇</span>
-              <span class="dir-caret" aria-hidden="true">
-                ›
-              </span>
-            </button>
-            <div class="dir-cat-body" hidden>
-              {g.posts.map((p) => (
-                <DirPost post={p} />
-              ))}
+      <section class="dir-group">
+        <button
+          class="dir-group-head"
+          type="button"
+          data-dir-toggle
+          data-href="/projects/"
+          aria-expanded="false"
+        >
+          <span class="dir-group-no">01</span>
+          <span class="dir-group-name">项目</span>
+          <span class="dir-group-meta">{PROJECTS.length ? `${PROJECTS.length} 个` : '筹备中'}</span>
+          <span class="dir-caret" aria-hidden="true">›</span>
+        </button>
+        <div class="dir-group-body" hidden>
+          {
+            PROJECTS.length > 0 ? (
+              PROJECTS.map((p) => (
+                <a
+                  class="dir-link"
+                  href={p.href ?? p.repo ?? '/projects/'}
+                  target={p.href || p.repo ? '_blank' : undefined}
+                  rel="noopener noreferrer"
+                >
+                  <span class="dir-link-name">{p.name}</span>
+                  <span class="dir-link-meta">{p.status ?? '项目'}</span>
+                </a>
+              ))
+            ) : (
+              <a class="dir-link" href="/projects/">
+                <span class="dir-link-name">项目清单</span>
+                <span class="dir-link-meta">暂时还是空的</span>
+              </a>
+            )
+          }
+        </div>
+      </section>
 
-              {g.subs.map((s) => (
-                <section class="dir-sub">
-                  <button
-                    class="dir-sub-head"
-                    type="button"
-                    data-dir-toggle
-                    aria-expanded="false"
-                  >
-                    <span class="dir-sub-name">{s.name}</span>
-                    <span class="dir-sub-meta">{s.count} 篇</span>
-                    <span class="dir-caret" aria-hidden="true">
-                      ›
-                    </span>
-                  </button>
-                  <div class="dir-sub-body" hidden>
-                    {s.posts.map((p) => (
-                      <DirPost post={p} />
-                    ))}
+      <section class="dir-group">
+        <button
+          class="dir-group-head"
+          type="button"
+          data-dir-toggle
+          data-href="/writeups/"
+          aria-expanded="false"
+        >
+          <span class="dir-group-no">02</span>
+          <span class="dir-group-name">学习</span>
+          <span class="dir-group-meta">{totalPosts} 篇</span>
+          <span class="dir-caret" aria-hidden="true">›</span>
+        </button>
+        <div class="dir-group-body" hidden>
+          {
+            groups.map((g) => (
+              <section class="dir-cat">
+                <button
+                  class="dir-cat-head"
+                  type="button"
+                  data-dir-toggle
+                  data-href={`/writeups/?cat=${encodeURIComponent(g.name)}`}
+                  aria-expanded="false"
+                >
+                  <span class="dir-cat-name cat-tone" data-cat={g.name}>{g.name}</span>
+                  <span class="dir-cat-meta">{g.count} 篇</span>
+                  <span class="dir-caret" aria-hidden="true">
+                    ›
+                  </span>
+                </button>
+                <div class="dir-cat-body" hidden>
+                  {g.posts.map((p) => (
+                    <DirPost post={p} />
+                  ))}
 
-                    {s.children.map((c) => (
-                      <section class="dir-sub is-nested">
-                        <button
-                          class="dir-sub-head"
-                          type="button"
-                          data-dir-toggle
-                          aria-expanded="false"
-                        >
-                          <span class="dir-sub-name">{c.name}</span>
-                          <span class="dir-sub-meta">{c.count} 篇</span>
-                          <span class="dir-caret" aria-hidden="true">
-                            ›
-                          </span>
-                        </button>
-                        <div class="dir-sub-body" hidden>
-                          {c.posts.map((p) => (
-                            <DirPost post={p} />
-                          ))}
-                        </div>
-                      </section>
-                    ))}
-                  </div>
-                </section>
-              ))}
-            </div>
-          </section>
-        ))
-      }
+                  {g.subs.map((s) => (
+                    <section class="dir-sub">
+                      <button
+                        class="dir-sub-head"
+                        type="button"
+                        data-dir-toggle
+                        aria-expanded="false"
+                      >
+                        <span class="dir-sub-name">{s.name}</span>
+                        <span class="dir-sub-meta">{s.count} 篇</span>
+                        <span class="dir-caret" aria-hidden="true">
+                          ›
+                        </span>
+                      </button>
+                      <div class="dir-sub-body" hidden>
+                        {s.posts.map((p) => (
+                          <DirPost post={p} />
+                        ))}
+
+                        {s.children.map((c) => (
+                          <section class="dir-sub is-nested">
+                            <button
+                              class="dir-sub-head"
+                              type="button"
+                              data-dir-toggle
+                              aria-expanded="false"
+                            >
+                              <span class="dir-sub-name">{c.name}</span>
+                              <span class="dir-sub-meta">{c.count} 篇</span>
+                              <span class="dir-caret" aria-hidden="true">
+                                ›
+                              </span>
+                            </button>
+                            <div class="dir-sub-body" hidden>
+                              {c.posts.map((p) => (
+                                <DirPost post={p} />
+                              ))}
+                            </div>
+                          </section>
+                        ))}
+                      </div>
+                    </section>
+                  ))}
+                </div>
+              </section>
+            ))
+          }
+        </div>
+      </section>
+
+      <section class="dir-group">
+        <button
+          class="dir-group-head"
+          type="button"
+          data-dir-toggle
+          aria-expanded="false"
+        >
+          <span class="dir-group-no">03</span>
+          <span class="dir-group-name">其他</span>
+          <span class="dir-group-meta">3 个入口</span>
+          <span class="dir-caret" aria-hidden="true">›</span>
+        </button>
+        <div class="dir-group-body" hidden>
+          <a class="dir-link" href="/tags/">
+            <span class="dir-link-name">标签</span>
+            <span class="dir-link-meta">按标签浏览</span>
+          </a>
+          <a class="dir-link" href="/archive/">
+            <span class="dir-link-name">归档</span>
+            <span class="dir-link-meta">按时间浏览</span>
+          </a>
+          <a class="dir-link" href="/search/">
+            <span class="dir-link-name">搜索</span>
+            <span class="dir-link-meta">全文检索</span>
+          </a>
+        </div>
+      </section>
+
+      <section class="dir-group">
+        <button
+          class="dir-group-head"
+          type="button"
+          data-dir-toggle
+          data-href="/about/"
+          aria-expanded="false"
+        >
+          <span class="dir-group-no">04</span>
+          <span class="dir-group-name">关于</span>
+          <span class="dir-group-meta">1 页</span>
+          <span class="dir-caret" aria-hidden="true">›</span>
+        </button>
+        <div class="dir-group-body" hidden>
+          <a class="dir-link" href="/about/">
+            <span class="dir-link-name">关于本站</span>
+            <span class="dir-link-meta">作者与这个站</span>
+          </a>
+          <a class="dir-link" href="https://github.com/Shalowtar" target="_blank" rel="noopener noreferrer">
+            <span class="dir-link-name">GitHub</span>
+            <span class="dir-link-meta">github.com/Shalowtar</span>
+          </a>
+          <a class="dir-link" href="mailto:zrlwy2007@foxmail.com">
+            <span class="dir-link-name">邮箱</span>
+            <span class="dir-link-meta">zrlwy2007@foxmail.com</span>
+          </a>
+        </div>
+      </section>
     </div>
   </div>
 </BaseLayout>

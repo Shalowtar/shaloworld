@@ -1992,6 +1992,93 @@ html[data-pop="on"] .toc {
   color: var(--ink-soft);
   opacity: 0.85;
 }
+.dir-group {
+  margin: 0 0 46px;
+}
+.dir-group:last-child {
+  margin-bottom: 12px;
+}
+.dir-group-head {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  width: 100%;
+  margin: 0;
+  padding: 0 0 12px;
+  border: 0;
+  border-bottom: 1px solid var(--rule);
+  background: none;
+  cursor: pointer;
+  text-align: left;
+  font-family: var(--font-display);
+  font-size: 1.8rem;
+  letter-spacing: 0.02em;
+  color: var(--ink-strong);
+  transition: border-color 0.15s;
+}
+.dir-group-head:hover {
+  border-bottom-color: var(--accent);
+}
+.dir-group-head:hover .dir-group-name {
+  color: var(--accent);
+}
+.dir-group-no {
+  font-family: var(--font-ui);
+  font-size: 0.66rem;
+  letter-spacing: 0.14em;
+  color: var(--ink-soft);
+  opacity: 0.75;
+}
+.dir-group-name {
+  transition: color 0.15s;
+}
+.dir-group-meta {
+  margin-left: auto;
+  font-family: var(--font-ui);
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  color: var(--ink-soft);
+  opacity: 0.85;
+}
+.dir-group-body {
+  margin-left: 2px;
+  padding: 18px 0 0 22px;
+  border-left: 1px dotted var(--rule-soft);
+}
+.dir-group-body .dir-cat:last-child {
+  margin-bottom: 8px;
+}
+.dir-link {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  padding: 12px 0 10px;
+  border-bottom: 1px dotted var(--rule-soft);
+  text-decoration: none;
+  font-family: var(--font-ui);
+  font-size: 0.85rem;
+  letter-spacing: 0.06em;
+  color: var(--ink-strong);
+  transition: color 0.15s, border-color 0.15s;
+}
+.dir-link:hover {
+  color: var(--accent);
+  border-bottom-color: var(--rule);
+}
+.dir-link-name {
+  transition: color 0.15s;
+}
+.dir-link-meta {
+  margin-left: auto;
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  color: var(--ink-soft);
+  opacity: 0.8;
+}
+.dir-link:hover .dir-link-meta {
+  color: var(--accent);
+  opacity: 0.9;
+}
 .dir-cat {
   margin: 0 0 38px;
 }
@@ -2158,6 +2245,23 @@ html[data-pop="on"] .toc {
 .dir-heads li.is-deep {
   padding-left: 18px;
   opacity: 0.86;
+}
+
+@media (max-width: 640px) {
+  .dir-group-head {
+    gap: 10px;
+    font-size: 1.45rem;
+  }
+  .dir-group-body {
+    margin-left: 0;
+    padding-left: 12px;
+  }
+  .dir-link {
+    gap: 10px;
+  }
+  .dir-link-meta {
+    font-size: 0.64rem;
+  }
 }
 
 /* ---------- 打印 ---------- */
