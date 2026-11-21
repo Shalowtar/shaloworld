@@ -1,16 +1,13 @@
 ---
 import Breadcrumb from '../components/Breadcrumb.astro';
 import BaseLayout from '../layouts/BaseLayout.astro';
-import SmallToc from '../components/SmallToc.astro';
 import { getCollection } from 'astro:content';
 import { SITE, CATEGORIES } from '../consts';
 import { visiblePosts, tagCounts, formatDate, categoryCounts } from '../utils/posts';
-import type { TocGroup } from '../utils/toc';
 
 const all = visiblePosts(await getCollection('writeups'));
 const tags = tagCounts(all);
 const cats = categoryCounts(all, CATEGORIES);
-const tocGroups: TocGroup[] = [{ name: '关于作者', href: '/about/', current: true }];
 
 /** 「最后更新」跟着最近改过的那篇文章走，点进去就是它 */
 const latestPost = all.length
@@ -74,8 +71,6 @@ const lastUpdate = latestPost ? latestPost.data.updatedAt ?? latestPost.data.pub
           </a>
         </div>
       </div>
-
-      <SmallToc title="关于目录" groups={tocGroups} />
     </div>
   </div>
 </BaseLayout>

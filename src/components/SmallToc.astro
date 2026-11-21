@@ -138,9 +138,14 @@ const { title, groups } = Astro.props;
 
     if (trigger) {
       trigger.addEventListener('click', function (e) {
-        /* 有分区小目录时，点目录打开浮层；没有时照常去完整目录页 */
+        /* 有分区小目录时，单击打开浮层；双击留给完整目录页 */
         e.preventDefault();
+        if (e.detail > 1) return;
         setOpen(!isOpen);
+      });
+      trigger.addEventListener('dblclick', function (e) {
+        e.preventDefault();
+        window.location.href = trigger.getAttribute('href') || '/toc/';
       });
     }
     if (closeBtn) {
