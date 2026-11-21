@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://shalowtar.com/sitemap.xml
+Sitemap: https://shaloworld.pages.dev/sitemap.xml

@@ -2,7 +2,7 @@
 
 Shalowtar 的个人博客：面向 CTF Writeup 的纯静态站点，基于 **Astro 6** 构建——没有后端、没有数据库、没有服务器要养，构建产物就是一堆 HTML，扔到任何静态托管上都能跑。
 
-站点名 `Shaloworld`、作者 `Shalowtar`、域名 `https://shalowtar.com`，这三处都在 `src/consts.ts` 里改。
+站点名 `Shaloworld`、作者 `Shalowtar` 在 `src/consts.ts`；域名现在是 `https://shaloworld.pages.dev`，换域名还要同步 `astro.config.mjs` 和 `public/robots.txt`。
 
 内容全部是 `src/content/writeups/` 下的 Markdown 文件，正文永远在自己手里，换框架也不用重写。
 
@@ -12,11 +12,11 @@ Shalowtar 的个人博客：面向 CTF Writeup 的纯静态站点，基于 **Ast
 
 ## 当前状态
 
-**功能框架已完整可用，内容为空。**
+**功能框架完整可用，内容持续更新中。**
 
-- `src/content/writeups/` 下只有一份 `_template.md`，它的 `draft: true` 意味着全站都不会显示（首页、列表、归档、标签、RSS、sitemap 都不收录），所以站点现在是干净的空状态。
-- 这份模板只用来参照字段格式，**不要直接在它上面写文章**，用 `npm run new` 生成新文件。
-- 不需要参照时可以删掉它，功能不受影响（只是每次构建会多一行 "collection is empty" 的提示）。
+- 文章在 `src/content/writeups/`，列表、标签、目录、RSS、sitemap 都会自动收录。
+- `_template.md` 是字段参照，`draft: true`，不会出现在站内；**不要直接在它上面写文章**，用 `npm run new` 生成新文件。
+- 文章多了以后也不需要改页面代码，构建会自动生成列表和详情页。
 
 ---
 
@@ -41,17 +41,15 @@ npm run preview      # 本地预览 dist/ 的构建结果
 
 ## 先改这 3 个地方
 
-当前已按 Shaloworld / Shalowtar / `shalowtar.com` 配好，下面这张表是以后要改时对照用的：
+当前已按 Shaloworld / Shalowtar / `https://shaloworld.pages.dev` 配好，下面这张表是以后要改时对照用的：
 
 | 文件 | 改什么 |
 | --- | --- |
-| `src/consts.ts` | 站点名 `title`、标语 `tagline`、作者 `author`、邮箱、GitHub、导航项、技能矩阵 `SKILLS` |
-| `astro.config.mjs` | `site` 改成你的正式域名（影响 RSS 与 sitemap 里的绝对链接） |
+| `src/consts.ts` | 站点名、简介、作者、邮箱、GitHub、导航项 |
+| `astro.config.mjs` | `site` 改成正式域名（影响 RSS 与 sitemap 里的绝对链接） |
 | `public/robots.txt` | 把 sitemap 的域名同步改掉 |
 
-域名提醒：`shalowtar.com` 必须由你自己注册并绑定到托管平台，站内配置才会指向正确地址。换域名时这三处一起改。
-
-简历下载按钮：把 PDF 放到 `public/resume.pdf`，`/about/` 页面会自动出现「简历 PDF ↓」按钮，没放就不显示（不会出现死链）。
+域名提醒：现在用的是 Cloudflare Pages 的 `shaloworld.pages.dev`。以后买域名并绑定到托管平台时，上面三处一起改。
 
 ---
 
@@ -134,7 +132,7 @@ src/content/writeups/2026-isctf-reverse-babyrev.md
 ## 7. 复盘            踩了什么坑、下次怎么更快
 ```
 
-`##` 和 `###` 会自动进右侧悬浮目录，标题 id 自动生成。
+`##` 和 `###` 会自动进右侧分区小目录，标题 id 自动生成。
 
 ### Flag 折叠块
 
@@ -159,23 +157,26 @@ flag{your_flag_here}
 ```
 blog/
 ├─ astro.config.mjs       站点配置（域名、Shiki 主题、remark 插件）
-├─ public/                原样拷贝到根目录：favicon、robots.txt、downloads/、resume.pdf
+├─ public/                原样拷贝到根目录：favicon、robots.txt、_redirects、字体、OG 封面
 ├─ scripts/new-post.mjs   新建文章脚本
 ├─ src/
-│  ├─ consts.ts           站点信息、导航、技能矩阵
+│  ├─ consts.ts           站点信息、导航、分类
 │  ├─ content.config.ts   Writeup 集合的 frontmatter schema
 │  ├─ content/writeups/   ★ 所有文章都在这
 │  ├─ layouts/BaseLayout.astro   全局外壳（head、SEO、主题初始化）
-│  ├─ components/         Header / Footer / PostCard
+│  ├─ components/         SmallToc / DirPost / Header / Footer / PostCard / Breadcrumb / InkCursor
 │  ├─ styles/global.css   设计系统：颜色、排版、组件样式全在这里
 │  ├─ utils/              日期、阅读时长、标签统计、相关推荐、flag 插件
 │  └─ pages/
 │     ├─ index.astro              首页
 │     ├─ writeups/                列表 + [...id] 详情
-│     ├─ archive.astro            归档
+│     ├─ projects/                项目
+│     ├─ toc/                     四分区总目录
+│     ├─ other/                   其他（筹备中）
 │     ├─ tags/                    标签总览 + [tag] 聚合
-│     ├─ about.astro              关于 / 简历
-│     ├─ search.astro             全站搜索（构建期生成索引）
+│     ├─ about.astro              关于 / 作者与联系方式
+│     ├─ search.astro             搜索页
+│     ├─ search-index.json.js     独立搜索索引
 │     ├─ 404.astro
 │     ├─ rss.xml.js / sitemap.xml.js
 ```
@@ -186,30 +187,30 @@ blog/
 
 **内容**
 - Markdown 文章 + frontmatter 类型校验（字段写错会在构建时报错）
-- 分类筛选、标签聚合、年份归档、上下篇、相关推荐
-- 全站搜索（构建时把标题/摘要/标签/正文塞进页面，纯前端匹配，零服务）
+- 分类筛选、标签聚合、上下篇、相关推荐
+- 全站搜索（索引单独生成 `/search-index.json`，搜索页按需加载，不再把全文塞进 HTML）
 - RSS 2.0、sitemap.xml、robots.txt、canonical、OG/Twitter 卡片
 - 草稿标记（`draft: true`）
 
 **阅读体验**
 - 纯浅色杂志版式（暖纸底 + 行楷标题），无主题切换
-- 右侧悬浮目录，滚动高亮；顶部阅读进度条
-- 代码高亮 + 一键复制；一键复制本文链接
+- 右侧分区小目录：项目页叫「项目目录」、学习页叫「学习目录」、其他/关于同理，且只列当前分区的内容；文章页自动展开当前分类和当前文章章节
+- 顶部阅读进度条；代码高亮 + 一键复制；一键复制本文链接
 - Flag 折叠块
 - 表格、附件区、图片点击放大
 - 任意页面按 `/` 或 `Ctrl K` 直达搜索
 - 移动端可用
 
-**求职向**
-- `/about/` 技能矩阵、时间线、项目卡片、简历 PDF 下载
-- 首页赛事/分类统计
-- 结构化数据（WebSite / Person / BlogPosting），利于搜索引擎与分享抓取
+**站点信息**
+
+- `/about/` 作者、联系方式、文章 / 标签 / 分类统计
+- 结构化数据（WebSite / BlogPosting），利于搜索引擎与分享抓取
 
 ---
 
 ## 域名怎么变成你的
 
-**域名和托管是两件事**：域名是"门牌号"，托管是"房子"。现在项目里写的 `shalowtar.com` 只是一串文字，既没买，也没有服务器在应答。
+**域名和托管是两件事**：域名是"门牌号"，托管是"房子"。现在站点跑在 `shaloworld.pages.dev`；下面的 `shalowtar.com` 只是举例，买了域名并绑定后再替换。
 
 ### 第一步：买下 shalowtar.com
 
@@ -240,14 +241,14 @@ blog/
 
 **做法 B：只在注册商加解析记录**
 在 DNS 记录里加：
-- `CNAME` `www` → `shalowtar.pages.dev`
+- `CNAME` `www` → `shalowworld.pages.dev`
 - 根域 `shalowtar.com`：Cloudflare Pages / Vercel 都支持根域 CNAME 展平，按平台提示填即可；若注册商不支持根域 CNAME，就用 `A` 记录指向平台给的 IP
 
 HTTPS 由平台自动签发，通常几分钟生效，不用自己搞证书。生效后 `https://shalowtar.com` 就能被任何设备打开。
 
 ### 第四步：把站内配置改成正式域名
 
-域名生效后，确认这三处是 `https://shalowtar.com`（现在是）：
+域名生效后，把这三处改成 `https://shalowtar.com`：
 
 - `src/consts.ts` → `SITE.url`
 - `astro.config.mjs` → `site`

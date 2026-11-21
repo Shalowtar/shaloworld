@@ -2,17 +2,32 @@ import type { CollectionEntry } from 'astro:content';
 
 export type Post = CollectionEntry<'writeups'>;
 
+/** 站点按北京时间展示；不要依赖构建机所在时区（Cloudflare 是 UTC） */
+const CN_OFFSET_MS = 8 * 60 * 60 * 1000;
+
+export function dateParts(date: Date): {
+  year: number;
+  month: number;
+  day: number;
+} {
+  const d = new Date(date.getTime() + CN_OFFSET_MS);
+  return {
+    year: d.getUTCFullYear(),
+    month: d.getUTCMonth() + 1,
+    day: d.getUTCDate(),
+  };
+}
+
 /** 2026-11-16 */
 export function formatDate(date: Date): string {
-  const y = date.getFullYear();
-  const m = `${date.getMonth() + 1}`.padStart(2, '0');
-  const d = `${date.getDate()}`.padStart(2, '0');
-  return `${y}-${m}-${d}`;
+  const { year, month, day } = dateParts(date);
+  return `${year}-${`${month}`.padStart(2, '0')}-${`${day}`.padStart(2, '0')}`;
 }
 
 /** 2026 年 11 月 16 日 */
 export function formatDateCN(date: Date): string {
-  return `${date.getFullYear()} 年 ${date.getMonth() + 1} 月 ${date.getDate()} 日`;
+  const { year, month, day } = dateParts(date);
+  return `${year} 年 ${month} 月 ${day} 日`;
 }
 
 /** 已发布 + 非草稿，按时间倒序 */
@@ -23,6 +38,19 @@ export function visiblePosts(posts: Post[]): Post[] {
       return p.data.publishedAt.getTime() <= Date.now();
     })
     .sort((a, b) => b.data.publishedAt.getTime() - a.data.publishedAt.getTime());
+}
+
+/** 只保留有文章的顶级分类，按 CATEGORIES 的顺序 */
+export function categoryCounts(
+  posts: Post[],
+  categories: readonly string[]
+): { name: string; count: number }[] {
+  return categories
+    .map((name) => ({
+      name,
+      count: posts.filter((p) => p.data.category === name).length,
+    }))
+    .filter((c) => c.count > 0);
 }
 
 /** 中文按字数、英文按词数粗估，代码块也算进去（偏保守） */

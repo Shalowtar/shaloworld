@@ -480,14 +480,6 @@ ol {
   padding-top: 62px;
   padding-bottom: 30px;
 }
-.kicker {
-  margin: 0 0 18px;
-  font-family: var(--font-ui);
-  font-size: 0.7rem;
-  letter-spacing: 0.34em;
-  text-transform: uppercase;
-  color: var(--accent);
-}
 .hero h1 {
   font-family: var(--font-display);
   font-weight: 400;
@@ -612,10 +604,6 @@ html.intro-on {
   }
   .hero h1 {
     font-size: clamp(1.8rem, 8.4vw, 2.6rem);
-  }
-  .kicker {
-    font-size: 0.62rem;
-    letter-spacing: 0.18em;
   }
   .section {
     padding-top: 44px;
@@ -1003,6 +991,9 @@ body {
   padding: 40px 0 0;
   transition: grid-template-columns 0.34s cubic-bezier(0.4, 0, 0.2, 1), gap 0.34s cubic-bezier(0.4, 0, 0.2, 1);
 }
+.page-main {
+  min-width: 0;
+}
 html[data-toc="off"] .article-grid {
   grid-template-columns: minmax(0, 1fr) 0px;
   gap: 0;
@@ -1106,7 +1097,7 @@ html[data-toc="off"] .toc {
   color: var(--accent);
   border-left-color: var(--accent);
 }
-/* 大节：这里是文章名，单击展开章节书签，双击打开文章 */
+/* 大节：这里是分类名；下面的文章再收章节书签 */
 .toc .toc-h2 {
   display: flex;
   align-items: baseline;
@@ -1117,6 +1108,26 @@ html[data-toc="off"] .toc {
   letter-spacing: 0.01em;
   color: var(--ink-strong);
 }
+.toc .toc-group {
+  margin: 0;
+}
+.toc .toc-group + .toc-group {
+  padding-top: 10px;
+  border-top: 1px solid var(--rule-soft);
+}
+.toc .toc-group[data-current="true"] > .toc-group-head {
+  color: var(--accent);
+}
+.toc .toc-group-sub {
+  margin: 6px 0 8px;
+}
+.toc .toc-count {
+  flex: 0 0 auto;
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.08em;
+  color: var(--ink-soft);
+}
 .toc .toc-post {
   margin-bottom: 10px;
 }
@@ -1126,6 +1137,9 @@ html[data-toc="off"] .toc {
 }
 /* 正在读的这篇，文章名用朱砂色标出来 */
 .toc .toc-post[data-current="true"] .toc-h2 {
+  color: var(--accent);
+}
+.toc .toc-leaf[data-current="true"] .toc-h2 {
   color: var(--accent);
 }
 .toc .toc-h2:hover {
@@ -1630,41 +1644,7 @@ html[data-pop="on"] .toc {
   }
 }
 
-/* ---------- 归档 ---------- */
-.year-group {
-  margin-bottom: 40px;
-}
-.year-title {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  margin-bottom: 7px;
-  font-family: var(--font-display);
-  font-size: 1.5rem;
-  color: var(--accent);
-}
-.year-count {
-  font-family: var(--font-mono);
-  font-size: 0.68rem;
-  letter-spacing: 0.08em;
-  color: var(--ink-soft);
-}
-.month-label {
-  display: flex;
-  align-items: baseline;
-  gap: 10px;
-  margin: 18px 0 4px;
-  font-family: var(--font-ui);
-  font-size: 0.72rem;
-  letter-spacing: 0.18em;
-  color: var(--ink-soft);
-}
-.month-label::after {
-  content: "";
-  flex: 1;
-  height: 1px;
-  background: var(--rule-soft);
-}
+/* ---------- 标签 ------------------------------------------ */
 .index-head {
   margin: 34px 0 8px;
   padding-bottom: 8px;
@@ -1675,38 +1655,7 @@ html[data-pop="on"] .toc {
   text-transform: uppercase;
   color: var(--ink-soft);
 }
-.year-title::after {
-  content: "";
-  flex: 1;
-  height: 1px;
-  background: var(--rule);
-}
-.year-list {
-  list-style: none;
-}
-.year-list li {
-  display: flex;
-  align-items: baseline;
-  gap: 16px;
-  padding: 11px 0;
-  border-bottom: 1px solid var(--rule-soft);
-}
-.year-list time {
-  flex: none;
-  width: 84px;
-  font-family: var(--font-mono);
-  font-size: 0.72rem;
-  color: var(--ink-soft);
-}
-.year-list a {
-  font-size: 0.95rem;
-  color: var(--ink);
-}
-.year-list a:hover {
-  color: var(--accent);
-}
 
-/* ---------- 标签 ------------------------------------------ */
 .tag-cloud {
   display: flex;
   flex-wrap: wrap;
@@ -2355,7 +2304,7 @@ html[data-pop="on"] .toc {
     color: #111;
     text-decoration: none;
   }
-  .article-body {
+  .prose {
     font-size: 11pt;
     line-height: 1.7;
   }

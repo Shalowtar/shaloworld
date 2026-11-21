@@ -1,7 +1,33 @@
 ---
 import Breadcrumb from '../../components/Breadcrumb.astro';
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import SmallToc from '../../components/SmallToc.astro';
 import { PROJECTS } from '../../data/projects';
+import type { TocGroup } from '../../utils/toc';
+
+const projectGroups: TocGroup[] = [];
+if (PROJECTS.length) {
+  const byCategory = new Map<string, typeof PROJECTS>();
+  for (const project of PROJECTS) {
+    const category = project.category ?? '项目';
+    if (!byCategory.has(category)) byCategory.set(category, []);
+    byCategory.get(category)!.push(project);
+  }
+  for (const [category, list] of byCategory) {
+    projectGroups.push({
+      name: category,
+      href: '/projects/#projects',
+      meta: `${list.length}`,
+      children: list.map((project) => ({
+        name: project.name,
+        href: project.href ?? project.repo ?? '/projects/#projects',
+        meta: project.status,
+      })),
+    });
+  }
+} else {
+  projectGroups.push({ name: '筹备中', href: '/projects/', current: true });
+}
 ---
 
 <BaseLayout title="项目" description="自己动手做的一些东西：在用、在做、写完的。">
@@ -9,43 +35,55 @@ import { PROJECTS } from '../../data/projects';
     <section class="article-top">
       <Breadcrumb segments={[{ label: 'projects' }]} />
       <h1>项目</h1>
-      {
-        PROJECTS.length > 0 && (
-          <div class="article-meta">
-            <span>共 {PROJECTS.length} 个</span>
-          </div>
-        )
-      }
+      <div class="article-meta">
+        <span>{PROJECTS.length > 0 ? `共 ${PROJECTS.length} 个` : '筹备中'}</span>
+      </div>
     </section>
 
-    <!-- 项目一条都还没写：往 src/data/projects.ts 里加一条，这里就会自动出现 -->
-    <div class="projects" id="projects">
-      {
-        PROJECTS.map((p) => (
-          <article class="project">
-            <div class="project-head">
-              <h2>{p.name}</h2>
-              {p.status && <span class="project-status">{p.status}</span>}
-            </div>
-            <p>{p.summary}</p>
-            <div class="project-foot">
-              {p.stack.map((s) => (
-                <span class="tag">{s}</span>
-              ))}
-              {p.repo && (
-                <a href={p.repo} target="_blank" rel="noopener noreferrer">
-                  代码 →
-                </a>
-              )}
-              {p.href && (
-                <a href={p.href} target="_blank" rel="noopener noreferrer">
-                  访问 →
-                </a>
-              )}
-            </div>
-          </article>
-        ))
-      }
+    <div class="article-grid">
+      <div class="page-main">
+        <!-- 项目一条都还没写：往 src/data/projects.ts 里加一条，这里就会自动出现 -->
+        <div class="projects" id="projects">
+          {
+            PROJECTS.length > 0 ? (
+              PROJECTS.map((p) => (
+                <article class="project">
+                  <div class="project-head">
+                    <h2>{p.name}</h2>
+                    {p.status && <span class="project-status">{p.status}</span>}
+                  </div>
+                  <p>{p.summary}</p>
+                  <div class="project-foot">
+                    {p.stack.map((s) => (
+                      <span class="tag">{s}</span>
+                    ))}
+                    {p.repo && (
+                      <a href={p.repo} target="_blank" rel="noopener noreferrer">
+                        代码 →
+                      </a>
+                    )}
+                    {p.href && (
+                      <a href={p.href} target="_blank" rel="noopener noreferrer">
+                        访问 →
+                      </a>
+                    )}
+                  </div>
+                </article>
+              ))
+            ) : (
+              <article class="project">
+                <div class="project-head">
+                  <h2>筹备中</h2>
+                  <span class="project-status">还没想好放什么</span>
+                </div>
+                <p>项目清单还是空的。之后做的东西会陆续放到这里。</p>
+              </article>
+            )
+          }
+        </div>
+      </div>
+
+      <SmallToc title="项目目录" groups={projectGroups} />
     </div>
   </div>
 </BaseLayout>

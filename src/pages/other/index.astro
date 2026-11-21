@@ -1,6 +1,10 @@
 ---
 import Breadcrumb from '../../components/Breadcrumb.astro';
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import SmallToc from '../../components/SmallToc.astro';
+import type { TocGroup } from '../../utils/toc';
+
+const tocGroups: TocGroup[] = [{ name: '其他', href: '/other/', current: true, meta: '筹备中' }];
 ---
 
 <BaseLayout title="其他" description="不属于项目和学习的内容，暂时还在筹备。">
@@ -13,16 +17,22 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
       </div>
     </section>
 
-    <div class="projects">
-      <article class="project">
-        <div class="project-head">
-          <h2>筹备中</h2>
-          <span class="project-status">还没想好放什么</span>
+    <div class="article-grid">
+      <div class="page-main">
+        <div class="projects">
+          <article class="project">
+            <div class="project-head">
+              <h2>筹备中</h2>
+              <span class="project-status">还没想好放什么</span>
+            </div>
+            <p>
+              这个分区先占个位置。之后可能会放一些不属于项目和学习记录的东西，现在还没有内容。
+            </p>
+          </article>
         </div>
-        <p>
-          这个分区先占个位置。之后可能会放一些不属于项目和学习记录的东西，现在还没有内容。
-        </p>
-      </article>
+      </div>
+
+      <SmallToc title="其他目录" groups={tocGroups} />
     </div>
   </div>
 </BaseLayout>

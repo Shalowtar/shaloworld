@@ -1,16 +1,20 @@
 ---
 import Breadcrumb from '../../components/Breadcrumb.astro';
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import SmallToc from '../../components/SmallToc.astro';
 import PostCard from '../../components/PostCard.astro';
 import { getCollection } from 'astro:content';
-import { visiblePosts } from '../../utils/posts';
+import { visiblePosts, categoryCounts } from '../../utils/posts';
 import { CATEGORIES } from '../../consts';
+import type { TocGroup } from '../../utils/toc';
 
 const all = visiblePosts(await getCollection('writeups'));
-const counts = CATEGORIES.map((c) => ({
-  name: c,
-  count: all.filter((p) => p.data.category === c).length,
-})).filter((c) => c.count > 0);
+const counts = categoryCounts(all, CATEGORIES);
+const tocGroups: TocGroup[] = counts.map((c) => ({
+  name: c.name,
+  href: `/writeups/?cat=${encodeURIComponent(c.name)}`,
+  meta: `${c.count}`,
+}));
 ---
 
 <BaseLayout title="学习" description="把学过的整理在这里：按分类筛选、按时间倒序。">
@@ -24,32 +28,38 @@ const counts = CATEGORIES.map((c) => ({
       </div>
     </section>
 
-    {
-      all.length > 0 && (
-        <div class="filters" id="filters">
-          <button class="chip" data-filter="all" aria-pressed="true">全部 ({all.length})</button>
-          {counts.map((c) => (
-            <button class="chip" data-filter={c.name} aria-pressed="false">
-              <span class="cat-tone" data-cat={c.name}>{c.name}</span> ({c.count})
-            </button>
-          ))}
-        </div>
-      )
-    }
-
-    {
-      all.length > 0 && (
-        <div class="post-list" id="post-list">
-          {all.map((post) => (
-            <div class="post-item" data-cat={post.data.category} data-event={post.data.event ?? ''}>
-              <PostCard post={post} />
+    <div class="article-grid">
+      <div class="page-main">
+        {
+          all.length > 0 && (
+            <div class="filters" id="filters">
+              <button class="chip" data-filter="all" aria-pressed="true">全部 ({all.length})</button>
+              {counts.map((c) => (
+                <button class="chip" data-filter={c.name} aria-pressed="false">
+                  <span class="cat-tone" data-cat={c.name}>{c.name}</span> ({c.count})
+                </button>
+              ))}
             </div>
-          ))}
-        </div>
-      )
-    }
+          )
+        }
 
-    <p class="search-hint" id="filter-count" style="margin-top:22px"></p>
+        {
+          all.length > 0 && (
+            <div class="post-list" id="post-list">
+              {all.map((post) => (
+                <div class="post-item" data-cat={post.data.category} data-event={post.data.event ?? ''}>
+                  <PostCard post={post} />
+                </div>
+              ))}
+            </div>
+          )
+        }
+
+        <p class="search-hint" id="filter-count" style="margin-top:22px"></p>
+      </div>
+
+      {tocGroups.length > 0 && <SmallToc title="学习目录" groups={tocGroups} />}
+    </div>
   </div>
 </BaseLayout>
 

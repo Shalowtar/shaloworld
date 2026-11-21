@@ -2,15 +2,12 @@
 import Breadcrumb from '../../components/Breadcrumb.astro';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { getCollection } from 'astro:content';
-import { visiblePosts, tagCounts } from '../../utils/posts';
+import { visiblePosts, tagCounts, categoryCounts } from '../../utils/posts';
 import { CATEGORIES } from '../../consts';
 
 const all = visiblePosts(await getCollection('writeups'));
 const tags = tagCounts(all);
-const cats = CATEGORIES.map((c) => ({
-  name: c,
-  count: all.filter((p) => p.data.category === c).length,
-})).filter((c) => c.count > 0);
+const cats = categoryCounts(all, CATEGORIES);
 ---
 
 <BaseLayout title="标签与分类" description="按标签或分类浏览全部学习记录。">

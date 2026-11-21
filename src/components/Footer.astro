@@ -1,6 +1,7 @@
 ---
 import { SITE } from '../consts';
-const year = new Date().getFullYear();
+import { dateParts } from '../utils/posts';
+const year = dateParts(new Date()).year;
 ---
 
 <footer class="site-footer">

@@ -1,15 +1,25 @@
 import { getCollection } from 'astro:content';
-import { visiblePosts } from '../utils/posts';
+import { visiblePosts, tagCounts } from '../utils/posts';
 import { SITE } from '../consts';
 
 export async function GET(context) {
   const posts = visiblePosts(await getCollection('writeups'));
   const site = (context.site ?? new URL(SITE.url)).href.replace(/\/$/, '');
 
-  const statics = ['/', '/writeups/', '/archive/', '/tags/', '/about/', '/search/'];
+  const statics = [
+    '/',
+    ...SITE.nav.map((item) => item.href),
+    '/toc/',
+    '/other/',
+    '/search/',
+  ];
 
   const entries = [
     ...statics.map((p) => ({ loc: `${site}${p}`, lastmod: null })),
+    ...tagCounts(posts).map((t) => ({
+      loc: `${site}/tags/${encodeURIComponent(t.tag)}/`,
+      lastmod: null,
+    })),
     ...posts.map((post) => ({
       loc: `${site}/writeups/${post.id}/`,
       lastmod: (post.data.updatedAt ?? post.data.publishedAt).toISOString(),

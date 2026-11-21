@@ -1,5 +1,6 @@
 import { defineCollection, z } from 'astro:content';
 import { glob } from 'astro/loaders';
+import { CATEGORIES, DIFFICULTIES } from './consts';
 
 /**
  * Writeup 集合：文章是 src/content/writeups 下的 .md 文件。
@@ -14,10 +15,10 @@ const writeups = defineCollection({
     summary: z.string(),
     /** 赛事名，例如 ISCTF 2026；没有可省 */
     event: z.string().optional(),
-    category: z.enum(['Reverse', 'Pwn', 'Crypto', 'Web', 'Misc', 'IoT', 'C', '密码学']),
+    category: z.enum(CATEGORIES),
     /** 目录页里的子分类，最多两级；例如 Reverse 下 ['SparkCTF2026', 'week2'] */
     subcategories: z.array(z.string()).max(2).default([]),
-    difficulty: z.enum(['Easy', 'Medium', 'Hard', 'Insane']).optional(),
+    difficulty: z.enum(DIFFICULTIES).optional(),
     tags: z.array(z.string()).default([]),
     publishedAt: z.coerce.date(),
     updatedAt: z.coerce.date().optional(),

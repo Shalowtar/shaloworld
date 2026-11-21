@@ -3,9 +3,7 @@
  * 确认目标文件真实存在。用法：npm run build && npm run check:links
  */
 import { readdir, readFile, stat } from 'node:fs/promises';
-import { existsSync } from 'node:fs';
 import path from 'node:path';
-import url from 'node:url';
 
 const root = path.resolve(process.cwd(), 'dist');
 
@@ -18,17 +16,28 @@ async function walk(dir, files = []) {
   return files;
 }
 
-/** 把一个站内链接解析成 dist 里应当存在的文件 */
+/** 把一个站内链接解析成 dist 里真正应当被回应的文件 */
 function candidates(href) {
-  const clean = href.split('#')[0].split('?')[0];
-  if (!clean.startsWith('/')) return [];
-  const target = path.join(root, decodeURIComponent(clean));
-  const out = [target];
-  if (clean.endsWith('/')) out.push(path.join(target, 'index.html'));
-  else if (!path.extname(target)) {
-    out.push(`${target}.html`, path.join(target, 'index.html'));
+  let clean;
+  try {
+    clean = decodeURIComponent(href.split('#')[0].split('?')[0]);
+  } catch {
+    return [];
   }
-  return out;
+  if (!clean.startsWith('/')) return [];
+  const target = path.join(root, clean);
+
+  if (clean.endsWith('/')) return [path.join(target, 'index.html')];
+  if (path.extname(target)) return [target];
+  return [`${target}.html`, path.join(target, 'index.html')];
+}
+
+async function isFile(file) {
+  try {
+    return (await stat(file)).isFile();
+  } catch {
+    return false;
+  }
 }
 
 const files = (await walk(root)).filter((f) => f.endsWith('.html'));
@@ -36,25 +45,24 @@ const missing = [];
 let checked = 0;
 
 for (const file of files) {
-    const html = await readFile(file, 'utf8');
-    const rel = path.relative(root, file);
+  const html = await readFile(file, 'utf8');
+  const rel = path.relative(root, file);
   for (const match of html.matchAll(/(?:href|src)="([^"]+)"/g)) {
     const href = match[1];
     if (/^(https?:|mailto:|javascript:|data:|#|\/\/)/.test(href)) continue;
     const list = candidates(href);
     if (!list.length) continue;
     checked += 1;
-    if (!list.some((c) => existsSync(c))) {
-      const served = list.find((c) => !path.extname(c));
-      if (!served) missing.push(`${rel} → ${href}`);
-    }
-  }
-}
 
-// 顺手确认每个 HTML 都有对应的可访问路径（防止某个页面漏生成）
-for (const file of files) {
-  const s = await stat(file);
-  if (!s.isFile()) missing.push(`${path.relative(root, file)} 不是文件`);
+    let found = false;
+    for (const candidate of list) {
+      if (await isFile(candidate)) {
+        found = true;
+        break;
+      }
+    }
+    if (!found) missing.push(`${rel} → ${href}`);
+  }
 }
 
 console.log(`检查了 ${files.length} 个页面、${checked} 条站内链接`);

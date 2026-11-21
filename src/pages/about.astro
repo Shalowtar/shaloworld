@@ -1,13 +1,16 @@
 ---
 import Breadcrumb from '../components/Breadcrumb.astro';
 import BaseLayout from '../layouts/BaseLayout.astro';
+import SmallToc from '../components/SmallToc.astro';
 import { getCollection } from 'astro:content';
 import { SITE, CATEGORIES } from '../consts';
-import { visiblePosts, tagCounts, formatDate } from '../utils/posts';
+import { visiblePosts, tagCounts, formatDate, categoryCounts } from '../utils/posts';
+import type { TocGroup } from '../utils/toc';
 
 const all = visiblePosts(await getCollection('writeups'));
 const tags = tagCounts(all);
-const cats = CATEGORIES.filter((c) => all.some((p) => p.data.category === c));
+const cats = categoryCounts(all, CATEGORIES);
+const tocGroups: TocGroup[] = [{ name: '关于作者', href: '/about/', current: true }];
 const lastUpdate = all.length
   ? new Date(
       Math.max(...all.map((p) => (p.data.updatedAt ?? p.data.publishedAt).getTime()))
@@ -22,40 +25,46 @@ const lastUpdate = all.length
       <h1>关于</h1>
     </section>
 
-    <div class="profile">
-      <div class="avatar" aria-hidden="true">S</div>
-      <div class="profile-body">
-        <h2>{SITE.author}</h2>
-        <ul class="contact-list">
-          <li>
-            <span class="contact-label">email：</span>
-            <a href={`mailto:${SITE.email}`}>{SITE.email}</a>
-          </li>
-          <li>
-            <span class="contact-label">github：</span>
-            <a href={SITE.github} target="_blank" rel="noopener noreferrer">{SITE.github}</a>
-          </li>
-        </ul>
-      </div>
-    </div>
+    <div class="article-grid">
+      <div class="page-main">
+        <div class="profile">
+          <div class="avatar" aria-hidden="true">S</div>
+          <div class="profile-body">
+            <h2>{SITE.author}</h2>
+            <ul class="contact-list">
+              <li>
+                <span class="contact-label">email：</span>
+                <a href={`mailto:${SITE.email}`}>{SITE.email}</a>
+              </li>
+              <li>
+                <span class="contact-label">github：</span>
+                <a href={SITE.github} target="_blank" rel="noopener noreferrer">{SITE.github}</a>
+              </li>
+            </ul>
+          </div>
+        </div>
 
-    <div class="stats stats-about">
-      <div class="stat">
-        <b>{all.length}</b>
-        <span>篇文章</span>
+        <div class="stats stats-about">
+          <div class="stat">
+            <b>{all.length}</b>
+            <span>篇文章</span>
+          </div>
+          <div class="stat">
+            <b>{tags.length}</b>
+            <span>个标签</span>
+          </div>
+          <div class="stat">
+            <b>{cats.length}</b>
+            <span>个分类</span>
+          </div>
+          <div class="stat">
+            <b class="stat-date">{lastUpdate ? formatDate(lastUpdate) : '—'}</b>
+            <span>最后更新</span>
+          </div>
+        </div>
       </div>
-      <div class="stat">
-        <b>{tags.length}</b>
-        <span>个标签</span>
-      </div>
-      <div class="stat">
-        <b>{cats.length}</b>
-        <span>个分类</span>
-      </div>
-      <div class="stat">
-        <b class="stat-date">{lastUpdate ? formatDate(lastUpdate) : '—'}</b>
-        <span>最后更新</span>
-      </div>
+
+      <SmallToc title="关于目录" groups={tocGroups} />
     </div>
   </div>
 </BaseLayout>

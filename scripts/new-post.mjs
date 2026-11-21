@@ -16,6 +16,8 @@ const CATEGORY_MAP = {
   web: 'Web',
   misc: 'Misc',
   iot: 'IoT',
+  c: 'C',
+  密码学: '密码学',
 };
 
 const args = process.argv.slice(2);
@@ -23,7 +25,9 @@ const title = args[0];
 const categoryArg = (args[1] || 'reverse').toLowerCase();
 
 if (!title) {
-  console.error('用法: node scripts/new-post.mjs "文章标题" [reverse|pwn|crypto|web|misc|iot]');
+  console.error(
+    '用法: node scripts/new-post.mjs "文章标题" [reverse|pwn|crypto|web|misc|iot|c|密码学]'
+  );
   process.exit(1);
 }
 
@@ -59,10 +63,11 @@ if (existsSync(target)) {
 }
 
 const body = `---
-title: ${title}
+title: ${JSON.stringify(title)}
 summary: 一句话说清这题考什么、你怎么解的。
 event: 赛事名称
 category: ${category}
+subcategories: []
 difficulty: Medium
 tags:
   - 待填

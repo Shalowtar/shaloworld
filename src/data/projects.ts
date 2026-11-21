@@ -4,6 +4,8 @@
  */
 export interface Project {
   name: string;
+  /** 项目目录里的大类，例如 工具 / 逆向 / Web；省掉时归到「项目」 */
+  category?: string;
   summary: string;
   stack: string[];
   /** 维护中 / 进行中 / 已完成 */

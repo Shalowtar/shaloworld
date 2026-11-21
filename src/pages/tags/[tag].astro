@@ -9,7 +9,7 @@ export async function getStaticPaths() {
   const all = visiblePosts(await getCollection('writeups'));
   return tagCounts(all).map((t) => ({
     params: { tag: t.tag },
-    props: { tag: t.tag, count: t.count },
+    props: { tag: t.tag },
   }));
 }
 

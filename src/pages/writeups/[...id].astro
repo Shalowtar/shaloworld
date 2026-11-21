@@ -1,8 +1,9 @@
 ---
 import Breadcrumb from '../../components/Breadcrumb.astro';
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import SmallToc from '../../components/SmallToc.astro';
 import { getCollection, render } from 'astro:content';
-import { SITE } from '../../consts';
+import { CATEGORIES, SITE } from '../../consts';
 import {
   visiblePosts,
   formatDate,
@@ -10,12 +11,11 @@ import {
   readingTime,
   relatedPosts,
 } from '../../utils/posts';
+import type { TocGroup } from '../../utils/toc';
 
 export async function getStaticPaths() {
-  const posts = await getCollection('writeups');
-  return posts
-    .filter((p) => !p.data.draft)
-    .map((post) => ({ params: { id: post.id }, props: { post } }));
+  const posts = visiblePosts(await getCollection('writeups'));
+  return posts.map((post) => ({ params: { id: post.id }, props: { post } }));
 }
 
 const { post } = Astro.props;
@@ -45,25 +45,49 @@ const crumbs = [
     : []),
 ];
 
-/** 学习目录：列出全部文章，每篇下面收着自己的章节书签 */
+/** 学习目录：只放当前分区（学习）的分类，分类下再收文章与章节 */
 const outlines: {
   id: string;
   title: string;
+  category: string;
   current: boolean;
-  headings: { depth: number; slug: string; text: string }[];
+  headings: { depth: number; slug: string; text: string; href?: string }[];
 }[] = [];
 for (const p of all) {
-  const outline =
-    p.id === post.id
-      ? headings
-      : (await render(p)).headings;
+  const isCurrent = p.id === post.id;
+  const outline = isCurrent ? headings : (await render(p)).headings;
   outlines.push({
     id: p.id,
     title: p.data.title,
-    current: p.id === post.id,
-    headings: outline.filter((h) => h.depth === 2 || h.depth === 3),
+    category: p.data.category,
+    current: isCurrent,
+    headings: outline
+      .filter((h) => h.depth === 2 || h.depth === 3)
+      .map((h) => ({
+        depth: h.depth,
+        slug: h.slug,
+        text: h.text,
+        href: isCurrent ? `#${h.slug}` : `/writeups/${p.id}/#${h.slug}`,
+      })),
   });
 }
+
+const tocGroups: TocGroup[] = CATEGORIES.map((category) => {
+  const list = outlines.filter((o) => o.category === category);
+  if (!list.length) return null;
+  return {
+    name: category,
+    href: `/writeups/?cat=${encodeURIComponent(category)}`,
+    meta: `${list.length}`,
+    current: category === data.category,
+    children: list.map((o) => ({
+      name: o.title,
+      href: o.current ? '#top' : `/writeups/${o.id}/`,
+      current: o.current,
+      headings: o.headings,
+    })),
+  };
+}).filter((group): group is TocGroup => group !== null);
 const minutes = readingTime(post.body);
 const description = data.summary;
 
@@ -93,16 +117,6 @@ const articleSchema = {
 
 <BaseLayout title={data.title} description={description} type="article" publishedAt={data.publishedAt}>
   <script slot="head" type="application/ld+json" set:html={jsonLd(articleSchema)} />
-  <script is:inline slot="head">
-    /* 目录收起状态在首屏绘制前就恢复，避免展开再收起的闪动 */
-    try {
-      var narrow = window.matchMedia('(max-width: 1040px)').matches;
-      document.documentElement.setAttribute(
-        'data-toc',
-        narrow ? 'off' : localStorage.getItem('shaloworld-toc') === 'off' ? 'off' : 'open'
-      );
-    } catch (e) {}
-  </script>
   <div class="reading-progress" id="reading-progress" aria-hidden="true"></div>
   <div class="wrap">
     <section class="article-top">
@@ -151,49 +165,8 @@ const articleSchema = {
       </article>
 
       {
-        outlines.length > 0 && (
-          <>
-            <aside class="toc" id="toc" aria-label="学习目录">
-              <div class="toc-head">
-                <span class="toc-title">学习目录</span>
-                <button class="toc-collapse" id="toc-collapse" type="button" aria-label="收起目录" aria-expanded="true">
-                  收起
-                </button>
-              </div>
-              <ul class="toc-list">
-                {outlines.map((o, oi) => (
-                  <li class="toc-post" data-current={o.current ? 'true' : 'false'}>
-                    {o.headings.length > 0 ? (
-                      <a
-                        class="toc-h2 has-sub"
-                        href={o.current ? '#top' : `/writeups/${o.id}/`}
-                        data-sub={`post-${oi}`}
-                        aria-expanded="false"
-                      >
-                        <span class="toc-text">{o.title}</span>
-                        <span class="toc-caret" aria-hidden="true">
-                          ›
-                        </span>
-                      </a>
-                    ) : (
-                      <a class="toc-h2" href={o.current ? '#top' : `/writeups/${o.id}/`}>
-                        <span class="toc-text">{o.title}</span>
-                      </a>
-                    )}
-                    {o.headings.length > 0 && (
-                      <ul class="toc-sub" id={`toc-sub-post-${oi}`} hidden>
-                        {o.headings.map((h) => (
-                          <li class={h.depth === 3 ? 'is-deep' : ''}>
-                            <a href={o.current ? `#${h.slug}` : `/writeups/${o.id}/#${h.slug}`}>{h.text}</a>
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            </aside>
-          </>
+        tocGroups.length > 0 && (
+          <SmallToc title="学习目录" groups={tocGroups} />
         )
       }
     </div>
@@ -442,168 +415,5 @@ const articleSchema = {
       });
     }
 
-    /* ---------- 目录：页头按钮开小目录 / 展开小节 / 收起整栏 ---------- */
-    const collapseBtn = document.getElementById('toc-collapse');
-    const tocEntry = document.getElementById('toc-entry');
-    const tocPanel = document.getElementById('toc');
-
-    function setTocOpen(open, persist) {
-      document.documentElement.setAttribute('data-toc', open ? 'open' : 'off');
-      if (collapseBtn) collapseBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
-      if (persist === false) return;
-      try {
-        localStorage.setItem('shaloworld-toc', open ? 'open' : 'off');
-      } catch (e) {}
-    }
-    if (collapseBtn) {
-      setTocOpen(document.documentElement.getAttribute('data-toc') !== 'off', false);
-    }
-
-    /* 页头「目录」：单击开小目录，双击去目录总页；鼠标移出小目录就收回 */
-    function setPop(on) {
-      document.documentElement.setAttribute('data-pop', on ? 'on' : 'off');
-      if (tocEntry) tocEntry.setAttribute('aria-expanded', on ? 'true' : 'false');
-    }
-    const popOpen = function () {
-      return document.documentElement.getAttribute('data-pop') === 'on';
-    };
-    let popTimer = null;
-    function holdPop() {
-      if (popTimer) clearTimeout(popTimer);
-      popTimer = null;
-    }
-    function dropPop(delay) {
-      holdPop();
-      popTimer = setTimeout(function () {
-        setPop(false);
-      }, delay || 260);
-    }
-
-    if (tocEntry) {
-      tocEntry.addEventListener('click', function (e) {
-        e.preventDefault();
-        if (e.detail > 1) return; /* 双击时第二下不来回开合，交给 dblclick 去跳转 */
-        setPop(!popOpen());
-      });
-      tocEntry.addEventListener('dblclick', function () {
-        window.location.href = '/toc/';
-      });
-      tocEntry.addEventListener('mouseenter', holdPop);
-      tocEntry.addEventListener('mouseleave', function () {
-        if (popOpen()) dropPop(320);
-      });
-    }
-    if (tocPanel) {
-      tocPanel.addEventListener('mouseenter', holdPop);
-      tocPanel.addEventListener('mouseleave', function () {
-        if (popOpen()) dropPop(240);
-      });
-    }
-    document.addEventListener('keydown', function (e) {
-      if (e.key === 'Escape') setPop(false);
-    });
-
-    /* 小目录里的「收起」：浮层状态下关浮层，侧栏状态下收侧栏 */
-    if (collapseBtn) {
-      collapseBtn.addEventListener('click', function () {
-        if (popOpen()) {
-          setPop(false);
-          return;
-        }
-        setTocOpen(false);
-      });
-    }
-
-    function setGroup(link, open) {
-      const sub = document.getElementById('toc-sub-' + link.getAttribute('data-sub'));
-      if (!sub) return;
-      link.setAttribute('aria-expanded', open ? 'true' : 'false');
-      if (open) sub.removeAttribute('hidden');
-      else sub.setAttribute('hidden', '');
-    }
-
-    function jumpTo(hash) {
-      if (!hash) return;
-      const el = document.getElementById(decodeURIComponent(hash.slice(1)));
-      if (!el) return;
-      if (history.pushState) history.pushState(null, '', hash);
-      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-
-    function go(href) {
-      if (!href) return;
-      if (href.charAt(0) === '#') jumpTo(href);
-      else window.location.href = href;
-    }
-
-    let pendingClick = null;
-    document.querySelectorAll('#toc .has-sub').forEach(function (link) {
-      /* 单击：展开 / 收起这篇文章的章节书签 */
-      link.addEventListener('click', function (e) {
-        e.preventDefault();
-        if (pendingClick) clearTimeout(pendingClick);
-        pendingClick = setTimeout(function () {
-          pendingClick = null;
-          setGroup(link, link.getAttribute('aria-expanded') !== 'true');
-        }, 220);
-      });
-      /* 双击：文章名 → 打开这篇文章；章节 → 跳到对应内容 */
-      link.addEventListener('dblclick', function (e) {
-        e.preventDefault();
-        if (pendingClick) {
-          clearTimeout(pendingClick);
-          pendingClick = null;
-        }
-        go(link.getAttribute('href'));
-      });
-      /* 键盘：Enter / 空格 直接跳转 */
-      link.addEventListener('keydown', function (e) {
-        if (e.key !== 'Enter' && e.key !== ' ') return;
-        e.preventDefault();
-        if (pendingClick) {
-          clearTimeout(pendingClick);
-          pendingClick = null;
-        }
-        go(link.getAttribute('href'));
-      });
-    });
-
-    /* 当前这篇默认展开，读者一眼看到自己的章节 */
-    const currentPost = document.querySelector('.toc-post[data-current="true"]');
-    const currentToggle = currentPost && currentPost.querySelector('.has-sub');
-    if (currentToggle) setGroup(currentToggle, true);
-
-    /* ---------- 目录滚动高亮（只跟踪当前文章） ---------- */
-    const tocLinks = currentPost ? Array.from(currentPost.querySelectorAll('.toc-sub a')) : [];
-    if (!tocLinks.length) return;
-
-    const targets = tocLinks
-      .map(function (a) {
-        const el = document.getElementById(decodeURIComponent(a.getAttribute('href').slice(1)));
-        return el ? { link: a, el: el } : null;
-      })
-      .filter(Boolean);
-
-    function onScroll() {
-      let current = targets[0];
-      targets.forEach(function (t) {
-        if (t.el.getBoundingClientRect().top <= 130) current = t;
-      });
-      tocLinks.forEach(function (a) {
-        a.classList.remove('active');
-      });
-      if (!current) return;
-      current.link.classList.add('active');
-
-      /* 滚到某一节时，若这篇文章的书签被手动收起了，就顺手展开 */
-      const sub = current.link.closest('.toc-sub');
-      if (sub && sub.hasAttribute('hidden')) {
-        const toggle = sub.parentElement.querySelector('.has-sub');
-        if (toggle) setGroup(toggle, true);
-      }
-    }
-
-    window.addEventListener('scroll', onScroll, { passive: true });
-    onScroll();
   })();
 </script>

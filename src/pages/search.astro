@@ -2,22 +2,9 @@
 import Breadcrumb from '../components/Breadcrumb.astro';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import { getCollection } from 'astro:content';
-import { visiblePosts, formatDate } from '../utils/posts';
+import { visiblePosts } from '../utils/posts';
 
 const all = visiblePosts(await getCollection('writeups'));
-
-const index = all.map((p) => ({
-  title: p.data.title,
-  summary: p.data.summary,
-  url: `/writeups/${p.id}/`,
-  cat: p.data.category,
-  event: p.data.event ?? '',
-  tags: p.data.tags,
-  date: formatDate(p.data.publishedAt),
-  body: (p.body ?? '').replace(/\s+/g, ' ').slice(0, 4000),
-}));
-
-const indexJson = JSON.stringify(index).replace(/</g, '\\u003c');
 ---
 
 <BaseLayout title="搜索" description="全文搜索站内的学习记录。">
@@ -46,13 +33,16 @@ const indexJson = JSON.stringify(index).replace(/</g, '\\u003c');
   </div>
 </BaseLayout>
 
-<script is:inline define:vars={{ indexJson }}>
+<script is:inline>
   (function () {
-    const posts = JSON.parse(indexJson);
     const input = document.getElementById('q');
     const results = document.getElementById('results');
     const hint = document.getElementById('hint');
     if (!input || !results) return;
+
+    /** 文章索引单独走 JSON，加载完再搜 */
+    let posts = null;
+    let indexError = '';
 
     function escapeHtml(s) {
       return String(s)
@@ -63,6 +53,7 @@ const indexJson = JSON.stringify(index).replace(/</g, '\\u003c');
     }
 
     function search(raw) {
+      if (!posts) return [];
       const terms = raw.toLowerCase().split(/\s+/).filter(Boolean);
       if (!terms.length) return [];
 
@@ -144,13 +135,33 @@ const indexJson = JSON.stringify(index).replace(/</g, '\\u003c');
     }
 
     let timer = null;
+    function run() {
+      if (!posts) {
+        hint.textContent = indexError || '正在载入搜索索引…';
+        return;
+      }
+      const raw = input.value;
+      render(search(raw), raw);
+    }
+
     input.addEventListener('input', function () {
       clearTimeout(timer);
-      timer = setTimeout(function () {
-        const raw = input.value;
-        render(search(raw), raw);
-      }, 120);
+      timer = setTimeout(run, 120);
     });
+
+    fetch('/search-index.json')
+      .then(function (res) {
+        if (!res.ok) throw new Error('index ' + res.status);
+        return res.json();
+      })
+      .then(function (data) {
+        posts = Array.isArray(data) ? data : [];
+        run();
+      })
+      .catch(function () {
+        indexError = '搜索索引加载失败，刷新页面再试';
+        hint.textContent = indexError;
+      });
 
     document.addEventListener('keydown', function (e) {
       if (e.key === '/' && document.activeElement !== input) {

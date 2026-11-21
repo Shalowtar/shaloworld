@@ -1,0 +1,268 @@
+---
+import type { TocGroup } from '../utils/toc';
+
+interface Props {
+  title: string;
+  groups: TocGroup[];
+}
+
+const { title, groups } = Astro.props;
+---
+
+<aside class="toc" id="toc" aria-label={title}>
+  <div class="toc-head">
+    <span class="toc-title">{title}</span>
+    <button class="toc-collapse" id="toc-collapse" type="button" aria-label="收起目录" aria-expanded="true">
+      收起
+    </button>
+  </div>
+  <ul class="toc-list">
+    {
+      groups.map((group, gi) => (
+        <li
+          class="toc-group"
+          data-current={group.current ? 'true' : undefined}
+          data-name={group.name}
+        >
+          {group.children && group.children.length > 0 ? (
+            <>
+              <a
+                class="toc-h2 toc-group-head has-sub"
+                href={group.href ?? '#'}
+                data-sub={`g-${gi}`}
+                aria-expanded="false"
+              >
+                <span class="toc-text">{group.name}</span>
+                {group.meta && <span class="toc-count">{group.meta}</span>}
+                <span class="toc-caret" aria-hidden="true">›</span>
+              </a>
+              <ul class="toc-sub toc-group-sub" id={`toc-sub-g-${gi}`} hidden>
+                {group.children.map((child, ci) => (
+                  <li
+                    class={child.headings && child.headings.length > 0 ? 'toc-post' : 'toc-leaf'}
+                    data-current={child.current ? 'true' : 'false'}
+                  >
+                    {child.headings && child.headings.length > 0 ? (
+                      <>
+                        <a
+                          class="toc-h2 has-sub"
+                          href={child.href}
+                          data-sub={`p-${gi}-${ci}`}
+                          aria-expanded="false"
+                        >
+                          <span class="toc-text">{child.name}</span>
+                          <span class="toc-caret" aria-hidden="true">›</span>
+                        </a>
+                        <ul class="toc-sub" id={`toc-sub-p-${gi}-${ci}`} hidden>
+                          {child.headings.map((heading) => (
+                            <li class={heading.depth === 3 ? 'is-deep' : ''}>
+                              <a href={heading.href ?? `#${heading.slug}`}>{heading.text}</a>
+                            </li>
+                          ))}
+                        </ul>
+                      </>
+                    ) : (
+                      <a class="toc-h2" href={child.href}>
+                        <span class="toc-text">{child.name}</span>
+                        {child.meta && <span class="toc-count">{child.meta}</span>}
+                      </a>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </>
+          ) : (
+            <a class="toc-h2 toc-group-head" href={group.href ?? '#'}>
+              <span class="toc-text">{group.name}</span>
+              {group.meta && <span class="toc-count">{group.meta}</span>}
+            </a>
+          )}
+        </li>
+      ))
+    }
+  </ul>
+</aside>
+
+<script is:inline>
+  (function () {
+    const panel = document.getElementById('toc');
+    if (!panel) return;
+    const collapseBtn = document.getElementById('toc-collapse');
+    const tocEntry = document.getElementById('toc-entry');
+
+    function setTocOpen(open, persist) {
+      document.documentElement.setAttribute('data-toc', open ? 'open' : 'off');
+      if (collapseBtn) collapseBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+      if (persist === false) return;
+      try {
+        localStorage.setItem('shaloworld-toc', open ? 'open' : 'off');
+      } catch (e) {}
+    }
+    if (collapseBtn) {
+      setTocOpen(document.documentElement.getAttribute('data-toc') !== 'off', false);
+    }
+
+    /* 页头「目录」：单击开小目录，双击去目录总页；鼠标移出小目录就收回 */
+    function setPop(on) {
+      document.documentElement.setAttribute('data-pop', on ? 'on' : 'off');
+      if (tocEntry) tocEntry.setAttribute('aria-expanded', on ? 'true' : 'false');
+    }
+    const popOpen = function () {
+      return document.documentElement.getAttribute('data-pop') === 'on';
+    };
+    let popTimer = null;
+    function holdPop() {
+      if (popTimer) clearTimeout(popTimer);
+      popTimer = null;
+    }
+    function dropPop(delay) {
+      holdPop();
+      popTimer = setTimeout(function () {
+        setPop(false);
+      }, delay || 260);
+    }
+
+    if (tocEntry) {
+      tocEntry.addEventListener('click', function (e) {
+        e.preventDefault();
+        if (e.detail > 1) return; /* 双击时第二下不来回开合，交给 dblclick 去跳转 */
+        setPop(!popOpen());
+      });
+      tocEntry.addEventListener('dblclick', function () {
+        window.location.href = '/toc/';
+      });
+      tocEntry.addEventListener('mouseenter', holdPop);
+      tocEntry.addEventListener('mouseleave', function () {
+        if (popOpen()) dropPop(320);
+      });
+    }
+    panel.addEventListener('mouseenter', holdPop);
+    panel.addEventListener('mouseleave', function () {
+      if (popOpen()) dropPop(240);
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') setPop(false);
+    });
+
+    /* 小目录里的「收起」：浮层状态下关浮层，侧栏状态下收侧栏 */
+    if (collapseBtn) {
+      collapseBtn.addEventListener('click', function () {
+        if (popOpen()) {
+          setPop(false);
+          return;
+        }
+        setTocOpen(false);
+      });
+    }
+
+    function setGroup(link, open) {
+      const sub = document.getElementById('toc-sub-' + link.getAttribute('data-sub'));
+      if (!sub) return;
+      link.setAttribute('aria-expanded', open ? 'true' : 'false');
+      if (open) sub.removeAttribute('hidden');
+      else sub.setAttribute('hidden', '');
+    }
+
+    function jumpTo(hash) {
+      if (!hash) return;
+      const el = document.getElementById(decodeURIComponent(hash.slice(1)));
+      if (!el) return;
+      if (history.pushState) history.pushState(null, '', hash);
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function go(href) {
+      if (!href) return;
+      if (href.charAt(0) === '#') jumpTo(href);
+      else window.location.href = href;
+    }
+
+    let pendingClick = null;
+    panel.querySelectorAll('.has-sub').forEach(function (link) {
+      /* 单击：展开 / 收起这一组 */
+      link.addEventListener('click', function (e) {
+        e.preventDefault();
+        if (pendingClick) clearTimeout(pendingClick);
+        pendingClick = setTimeout(function () {
+          pendingClick = null;
+          setGroup(link, link.getAttribute('aria-expanded') !== 'true');
+        }, 220);
+      });
+      /* 双击：分类名 → 去筛选；文章名 → 打开文章 */
+      link.addEventListener('dblclick', function (e) {
+        e.preventDefault();
+        if (pendingClick) {
+          clearTimeout(pendingClick);
+          pendingClick = null;
+        }
+        go(link.getAttribute('href'));
+      });
+      link.addEventListener('keydown', function (e) {
+        if (e.key !== 'Enter' && e.key !== ' ') return;
+        e.preventDefault();
+        if (pendingClick) {
+          clearTimeout(pendingClick);
+          pendingClick = null;
+        }
+        go(link.getAttribute('href'));
+      });
+    });
+
+    /* 当前分类：优先用页面标注，列表页则跟随 ?cat= */
+    let currentGroup = panel.querySelector('.toc-group[data-current="true"]');
+    if (!currentGroup) {
+      const preset = new URLSearchParams(location.search).get('cat');
+      if (preset) {
+        currentGroup =
+          Array.from(panel.querySelectorAll('.toc-group')).find(function (g) {
+            return g.getAttribute('data-name') === preset;
+          }) || null;
+        if (currentGroup) currentGroup.setAttribute('data-current', 'true');
+      }
+    }
+    if (currentGroup) {
+      const groupToggle = currentGroup.querySelector('.toc-group-head.has-sub');
+      if (groupToggle) setGroup(groupToggle, true);
+    }
+
+    /* 当前这篇默认展开，读者一眼看到自己的章节 */
+    const currentPost = panel.querySelector('.toc-post[data-current="true"]');
+    if (currentPost) {
+      const currentToggle = currentPost.querySelector('.has-sub');
+      if (currentToggle) setGroup(currentToggle, true);
+    }
+
+    /* ---------- 目录滚动高亮（只跟踪当前文章） ---------- */
+    const tocLinks = currentPost ? Array.from(currentPost.querySelectorAll('.toc-sub a')) : [];
+    if (!tocLinks.length) return;
+
+    const targets = tocLinks
+      .map(function (a) {
+        const el = document.getElementById(decodeURIComponent(a.getAttribute('href').slice(1)));
+        return el ? { link: a, el: el } : null;
+      })
+      .filter(Boolean);
+
+    function onScroll() {
+      let current = targets[0];
+      targets.forEach(function (t) {
+        if (t.el.getBoundingClientRect().top <= 130) current = t;
+      });
+      tocLinks.forEach(function (a) {
+        a.classList.remove('active');
+      });
+      if (!current) return;
+      current.link.classList.add('active');
+
+      /* 滚到某一节时，若这篇文章的书签被手动收起了，就顺手展开 */
+      const sub = current.link.closest('.toc-sub');
+      if (sub && sub.hasAttribute('hidden')) {
+        const toggle = sub.parentElement.querySelector('.has-sub');
+        if (toggle) setGroup(toggle, true);
+      }
+    }
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  })();
+</script>
