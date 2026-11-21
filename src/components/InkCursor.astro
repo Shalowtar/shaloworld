@@ -46,7 +46,6 @@
     var hoverPoints = [];
     var hoverPointsSig = '';
     var hoverLen = 1;
-    var hoverClip = false;
     var hoverStart = 0; // 起笔位置（沿描边的弧长，取离指针最近处）
     var pointerX = 0;
     var pointerY = 0;
@@ -401,13 +400,6 @@
       var travelled = hoverStart + hoverDir * run;
       travelled = ((travelled % L) + L) % L;
 
-      if (hoverClip) {
-        rctx.save();
-        rctx.beginPath();
-        rctx.rect(hoverRect.left, hoverRect.top, hoverRect.width, hoverRect.height);
-        rctx.clip();
-      }
-
       var TAIL = L * 0.9; // 墨尾绕满几乎整圈，只在墨头前方留一小段空当
       // 墨尾是这一笔“带出来"的：起笔时没有尾巴，走到哪尾巴才长到哪
       var tailNow = Math.min(TAIL, run);
@@ -465,7 +457,6 @@
       rctx.drawImage(ringDab, hx - hr, hy - hr, hr * 2, hr * 2);
 
       rctx.globalAlpha = 1;
-      if (hoverClip) rctx.restore();
     }
 
     function frame() {
@@ -503,6 +494,7 @@
 
     function hitTest(target) {
       if (!target || !target.closest) return null;
+      if (target.closest('[data-no-ink]')) return null;
       return target.closest('a, button, input, select, textarea, .chip, .flag-btn, .lightbox');
     }
 
@@ -517,15 +509,11 @@
         if (hoverRect && !hoverLeaveAt) hoverLeaveAt = performance.now();
         return;
       }
-      /* 普通链接留 8px 呼吸边；统计按钮按边框描，墨线不跑到框外 */
-      var inkPad = parseFloat(hoverEl.getAttribute('data-ink-pad'));
-      if (!isFinite(inkPad)) inkPad = 8;
-      hoverClip = inkPad === 0;
       hoverRect = {
-        left: r.left - inkPad,
-        top: r.top - inkPad,
-        width: r.width + inkPad * 2,
-        height: r.height + inkPad * 2,
+        left: r.left - 8,
+        top: r.top - 8,
+        width: r.width + 16,
+        height: r.height + 16,
       };
       var sig = Math.round(hoverRect.left) + ',' + Math.round(hoverRect.top) + ',' + Math.round(hoverRect.width) + ',' + Math.round(hoverRect.height);
       if (hoverKey !== hoverEl) {
