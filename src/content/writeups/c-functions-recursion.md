@@ -32,15 +32,15 @@ int main()
 {
 	int x;
 	printf("Input your number\n");
-	if (scanf_s("%d", &x) != 1 || x <= 0 || x > 50) 
+	if (scanf_s("%d", &x) != 1 || x <= 0 || x > 30) 
 	{
 		printf("Your input is wrong or too heavy\n");
 	}
 	else 
 	{
 		printf("\n你的输入是%d,现在计算%d!\n", x, x);
-		printf("递归：\n%d!=%llu\n", x, calc(x));
-		printf("迭代：\n%d!=%llu\n", x, calc_1(x));
+		printf("递归：\n%d!=%d\n", x, calc(x));
+		printf("迭代：\n%d!=%d\n", x, calc_1(x));
 	}
 	return 0;
 }
