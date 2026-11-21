@@ -2042,6 +2042,55 @@ html[data-pop="on"] .toc {
   padding: 2px 0 0 16px;
   border-left: 1px dotted var(--rule-soft);
 }
+/* 目录里的二级/三级文件夹 */
+.dir-sub {
+  margin: 8px 0 2px;
+}
+.dir-sub-head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  width: 100%;
+  margin: 0;
+  padding: 8px 0 7px;
+  border: 0;
+  border-bottom: 1px dotted var(--rule-soft);
+  background: none;
+  cursor: pointer;
+  text-align: left;
+  font-family: var(--font-ui);
+  font-size: 0.82rem;
+  letter-spacing: 0.08em;
+  color: var(--ink-strong);
+}
+.dir-sub-head:hover {
+  border-bottom-color: var(--rule);
+}
+.dir-sub-head:hover .dir-sub-name {
+  color: var(--accent);
+}
+.dir-sub-name {
+  transition: color 0.15s;
+}
+.dir-sub-meta {
+  margin-left: auto;
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  color: var(--ink-soft);
+  opacity: 0.8;
+}
+.dir-sub-body {
+  margin: 4px 0 2px 6px;
+  padding: 0 0 0 14px;
+  border-left: 1px dotted var(--rule-soft);
+}
+.dir-sub.is-nested {
+  margin-top: 2px;
+}
+.dir-sub.is-nested > .dir-sub-head {
+  font-size: 0.76rem;
+  opacity: 0.92;
+}
 .dir-post {
   padding: 11px 0 7px;
 }

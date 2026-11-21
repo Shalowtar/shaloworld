@@ -1,33 +1,109 @@
 ---
 import Breadcrumb from '../../components/Breadcrumb.astro';
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import DirPost, { type DirPostData } from '../../components/DirPost.astro';
 import { getCollection, render } from 'astro:content';
-import { CATEGORIES } from '../../consts';
-import { visiblePosts, formatDate } from '../../utils/posts';
+import { CATEGORIES, SUBCATEGORY_ORDER } from '../../consts';
+import { visiblePosts } from '../../utils/posts';
 
-/* 目录总页：分类是第一级，下面依次是文章、文章的章节；默认全部折叠 */
+/* 目录总页：大分类 → 子分类 → 文章 → 章节；默认全部折叠 */
 const all = visiblePosts(await getCollection('writeups'));
 
-const groups: {
+interface SubNode {
   name: string;
   latest: number;
-  posts: { id: string; title: string; date: Date; headings: { depth: number; slug: string; text: string }[] }[];
-}[] = [];
+  posts: DirPostData[];
+  count: number;
+  children: SubNode[];
+}
+
+interface CatGroup {
+  name: string;
+  latest: number;
+  posts: DirPostData[];
+  count: number;
+  subs: SubNode[];
+}
+
+function latestOf(posts: DirPostData[]): number {
+  return posts.reduce((max, p) => Math.max(max, p.date.getTime()), 0);
+}
+
+const groups: CatGroup[] = [];
 
 for (const cat of CATEGORIES) {
   const list = all.filter((p) => p.data.category === cat);
   if (!list.length) continue;
-  const posts = [];
+
+  const posts: DirPostData[] = [];
   for (const p of list) {
     const { headings } = await render(p);
     posts.push({
       id: p.id,
       title: p.data.title,
       date: p.data.publishedAt,
+      subcategories: p.data.subcategories,
       headings: headings.filter((h) => h.depth === 2 || h.depth === 3),
     });
   }
-  groups.push({ name: cat, latest: posts[0].date.getTime(), posts });
+
+  const direct = posts.filter((p) => p.subcategories.length === 0);
+  const first = new Map<
+    string,
+    { name: string; posts: DirPostData[]; children: Map<string, DirPostData[]> }
+  >();
+
+  for (const p of posts) {
+    const top = p.subcategories[0];
+    if (!top) continue;
+    if (!first.has(top)) {
+      first.set(top, { name: top, posts: [], children: new Map() });
+    }
+    const node = first.get(top)!;
+    const second = p.subcategories[1];
+    if (second) {
+      if (!node.children.has(second)) node.children.set(second, []);
+      node.children.get(second)!.push(p);
+    } else {
+      node.posts.push(p);
+    }
+  }
+
+  const subs: SubNode[] = [...first.values()].map((node) => {
+    const children: SubNode[] = [...node.children.entries()].map(([name, list]) => ({
+      name,
+      latest: latestOf(list),
+      posts: list,
+      count: list.length,
+      children: [],
+    }));
+    children.sort((a, b) => b.latest - a.latest);
+    const ownLatest = latestOf(node.posts);
+    return {
+      name: node.name,
+      latest: Math.max(ownLatest, ...children.map((c) => c.latest)),
+      posts: node.posts,
+      count: node.posts.length + children.reduce((sum, c) => sum + c.count, 0),
+      children,
+    };
+  });
+
+  const order = SUBCATEGORY_ORDER[cat] ?? [];
+  subs.sort((a, b) => {
+    const ia = order.indexOf(a.name);
+    const ib = order.indexOf(b.name);
+    const oa = ia === -1 ? Number.MAX_SAFE_INTEGER : ia;
+    const ob = ib === -1 ? Number.MAX_SAFE_INTEGER : ib;
+    return oa - ob || b.latest - a.latest;
+  });
+
+  groups.push({
+    name: cat,
+    latest: latestOf(posts),
+    posts: direct,
+    count: posts.length,
+    subs,
+  });
 }
 
 /* 最近有更新的分类排在前面 */
@@ -60,48 +136,58 @@ const totalPosts = all.length;
               aria-expanded="false"
             >
               <span class="dir-cat-name cat-tone" data-cat={g.name}>{g.name}</span>
-              <span class="dir-cat-meta">{g.posts.length} 篇</span>
+              <span class="dir-cat-meta">{g.count} 篇</span>
               <span class="dir-caret" aria-hidden="true">
                 ›
               </span>
             </button>
             <div class="dir-cat-body" hidden>
               {g.posts.map((p) => (
-                <article class="dir-post">
-                  {p.headings.length > 0 ? (
-                    <button
-                      class="dir-post-head"
-                      type="button"
-                      data-dir-toggle
-                      data-href={`/writeups/${p.id}/`}
-                      aria-expanded="false"
-                    >
-                      <span class="dir-post-title">{p.title}</span>
-                      <time class="dir-date" datetime={p.date.toISOString()}>
-                        {formatDate(p.date)}
-                      </time>
-                      <span class="dir-caret" aria-hidden="true">
-                        ›
-                      </span>
-                    </button>
-                  ) : (
-                    <a class="dir-post-head is-link" href={`/writeups/${p.id}/`}>
-                      <span class="dir-post-title">{p.title}</span>
-                      <time class="dir-date" datetime={p.date.toISOString()}>
-                        {formatDate(p.date)}
-                      </time>
-                    </a>
-                  )}
-                  {p.headings.length > 0 && (
-                    <ul class="dir-heads" hidden>
-                      {p.headings.map((h) => (
-                        <li class={h.depth === 3 ? 'is-deep' : ''}>
-                          <a href={`/writeups/${p.id}/#${h.slug}`}>{h.text}</a>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </article>
+                <DirPost post={p} />
+              ))}
+
+              {g.subs.map((s) => (
+                <section class="dir-sub">
+                  <button
+                    class="dir-sub-head"
+                    type="button"
+                    data-dir-toggle
+                    aria-expanded="false"
+                  >
+                    <span class="dir-sub-name">{s.name}</span>
+                    <span class="dir-sub-meta">{s.count} 篇</span>
+                    <span class="dir-caret" aria-hidden="true">
+                      ›
+                    </span>
+                  </button>
+                  <div class="dir-sub-body" hidden>
+                    {s.posts.map((p) => (
+                      <DirPost post={p} />
+                    ))}
+
+                    {s.children.map((c) => (
+                      <section class="dir-sub is-nested">
+                        <button
+                          class="dir-sub-head"
+                          type="button"
+                          data-dir-toggle
+                          aria-expanded="false"
+                        >
+                          <span class="dir-sub-name">{c.name}</span>
+                          <span class="dir-sub-meta">{c.count} 篇</span>
+                          <span class="dir-caret" aria-hidden="true">
+                            ›
+                          </span>
+                        </button>
+                        <div class="dir-sub-body" hidden>
+                          {c.posts.map((p) => (
+                            <DirPost post={p} />
+                          ))}
+                        </div>
+                      </section>
+                    ))}
+                  </div>
+                </section>
               ))}
             </div>
           </section>
@@ -112,7 +198,7 @@ const totalPosts = all.length;
 </BaseLayout>
 
 <script is:inline>
-  /* 大目录：单击展开、双击跳转，键盘 Enter 也能展开 */
+  /* 大目录：单击展开、双击跳转；子分类只展开/收起 */
   (function () {
     document.querySelectorAll('[data-dir-toggle]').forEach(function (el) {
       var timer = null;

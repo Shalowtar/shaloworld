@@ -3,6 +3,7 @@ title: 'SparkCTF week2 · manbo'
 summary: '第一次不靠 AI 自己写解密：把 IDA 里抠出来的加密逻辑反着写，踩了下标错位、大小端和 char 符号扩展三个坑，最后跑出 flag。'
 event: 'SparkCTF'
 category: Reverse
+subcategories: ['SparkCTF2026', 'week2']
 tags: ['逆向', 'C语言学习', 'SparkCTF2026']
 publishedAt: 2026-11-19T02:05:00+08:00
 tools: ['IDA']

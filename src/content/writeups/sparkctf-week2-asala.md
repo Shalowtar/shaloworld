@@ -2,6 +2,7 @@
 title: 'SparkCTF week2 · asala'
 summary: 'UPX 脱壳后进 IDA，逆一个 24 字节的异或加密；第一版跑出乱码，问题出在抄数据时的字节顺序，不是下标。'
 category: Reverse
+subcategories: ['SparkCTF2026', 'week2']
 event: SparkCTF
 tags: ['逆向', 'C语言学习', 'SparkCTF2026']
 tools: ['IDA', 'UPX', 'DIE']

@@ -2,6 +2,7 @@
 title: 第一周周报
 summary: 这一周把常用汇编指令和寄存器过了一遍，并用 IDA 复现了一道 GDPTCTF 的逆向题（时间随机数 + xxtea 校验），记录在 3 页的周报里。
 category: Reverse
+subcategories: ['学习周报']
 publishedAt: 2026-11-17
 tags:
   - 逆向
