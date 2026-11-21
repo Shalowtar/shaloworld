@@ -118,7 +118,7 @@ const articleSchema = {
 <BaseLayout title={data.title} description={description} type="article" publishedAt={data.publishedAt}>
   <script slot="head" type="application/ld+json" set:html={jsonLd(articleSchema)} />
   <div class="reading-progress" id="reading-progress" aria-hidden="true"></div>
-  <div class="wrap">
+  <div class="wrap reading-page">
     <section class="article-top">
       <Breadcrumb segments={crumbs} />
 

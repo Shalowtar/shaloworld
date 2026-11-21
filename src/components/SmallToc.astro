@@ -9,9 +9,10 @@ interface Props {
 const { title, groups } = Astro.props;
 ---
 
-<aside class="toc" id="toc" aria-label={title}>
+<aside class="toc" id="toc" aria-label={title} aria-hidden="true" inert>
   <div class="toc-head">
     <span class="toc-title">{title}</span>
+    <button class="toc-close" id="toc-close" type="button" aria-label="关闭目录">×</button>
   </div>
   <ul class="toc-list">
     {
@@ -84,6 +85,81 @@ const { title, groups } = Astro.props;
   (function () {
     const panel = document.getElementById('toc');
     if (!panel) return;
+    const trigger = document.getElementById('toc-toggle');
+    const closeBtn = document.getElementById('toc-close');
+    const navbar = document.querySelector('.navbar');
+    const navTools = document.querySelector('.nav-tools');
+    const tocList = panel.querySelector('.toc-list');
+    let isOpen = false;
+
+    if (trigger) {
+      trigger.setAttribute('aria-controls', 'toc');
+      trigger.setAttribute('aria-expanded', 'false');
+    }
+
+    function place() {
+      if (!navbar) return;
+      const top = Math.round(navbar.getBoundingClientRect().bottom + 8);
+      const anchor = navTools || navbar;
+      const right = Math.max(12, Math.round(window.innerWidth - anchor.getBoundingClientRect().right));
+      panel.style.setProperty('--toc-top', top + 'px');
+      panel.style.setProperty('--toc-right', right + 'px');
+      panel.style.setProperty('--toc-max', Math.max(200, window.innerHeight - top - 16) + 'px');
+    }
+
+    function revealCurrent() {
+      if (!tocList) return;
+      const current =
+        panel.querySelector('.toc-post[data-current="true"]') ||
+        panel.querySelector('.toc-group[data-current="true"]');
+      if (!current) return;
+      const listRect = tocList.getBoundingClientRect();
+      const itemRect = current.getBoundingClientRect();
+      if (itemRect.top < listRect.top || itemRect.top > listRect.bottom - 24) {
+        tocList.scrollTop += itemRect.top - listRect.top - 2;
+      }
+    }
+
+    function setOpen(next, focusTrigger) {
+      isOpen = next;
+      panel.classList.toggle('is-open', next);
+      panel.setAttribute('aria-hidden', next ? 'false' : 'true');
+      if (next) panel.removeAttribute('inert');
+      else panel.setAttribute('inert', '');
+      if (trigger) trigger.setAttribute('aria-expanded', next ? 'true' : 'false');
+      if (next) {
+        place();
+        if (closeBtn) closeBtn.focus({ preventScroll: true });
+        requestAnimationFrame(revealCurrent);
+      } else if (focusTrigger && trigger) {
+        trigger.focus({ preventScroll: true });
+      }
+    }
+
+    if (trigger) {
+      trigger.addEventListener('click', function (e) {
+        /* 有分区小目录时，点目录打开浮层；没有时照常去完整目录页 */
+        e.preventDefault();
+        setOpen(!isOpen);
+      });
+    }
+    if (closeBtn) {
+      closeBtn.addEventListener('click', function () {
+        setOpen(false, true);
+      });
+    }
+    document.addEventListener('click', function (e) {
+      if (!isOpen) return;
+      if (panel.contains(e.target) || (trigger && trigger.contains(e.target))) return;
+      setOpen(false, false);
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && isOpen) setOpen(false, true);
+    });
+    window.addEventListener('resize', function () {
+      if (isOpen) place();
+    });
+
     function setGroup(link, open) {
       const sub = document.getElementById('toc-sub-' + link.getAttribute('data-sub'));
       if (!sub) return;
@@ -135,6 +211,13 @@ const { title, groups } = Astro.props;
         }
         go(link.getAttribute('href'));
       });
+    });
+
+    /* 点章节书签后收起浮层，把视线还给正文；分类的展开/收起不受影响 */
+    panel.addEventListener('click', function (e) {
+      const link = e.target.closest('a');
+      if (!link || link.classList.contains('has-sub')) return;
+      if (link.getAttribute('href').charAt(0) === '#') setOpen(false, false);
     });
 
     /* 当前分类：优先用页面标注，列表页则跟随 ?cat= */

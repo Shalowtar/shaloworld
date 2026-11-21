@@ -974,72 +974,115 @@ body {
   color: var(--ink-soft);
 }
 
-/* ---------- 正文 + 目录 ---------- */
+/* ---------- 正文 ---------- */
 .article-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 232px;
-  gap: 48px;
+  display: block;
   padding: 40px 0 0;
 }
 .page-main {
   min-width: 0;
 }
-@media (max-width: 1040px) {
-  .article-grid {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 0;
-  }
+/* 文章页不再留侧栏，正文按原来的阅读宽度居中 */
+.reading-page {
+  max-width: 860px;
 }
 
-/* ---------- 目录 ---------- */
+/* ---------- 目录：点页头「目录」打开的小浮层 ---------- */
 .toc {
-  position: -webkit-sticky;
-  position: sticky;
-  top: 108px;
-  align-self: start;
-  max-height: calc(100vh - 150px);
-  max-height: calc(100dvh - 150px);
+  position: fixed;
+  top: var(--toc-top, 108px);
+  right: var(--toc-right, 24px);
+  z-index: 45;
+  display: flex;
+  flex-direction: column;
+  width: min(340px, calc(100vw - 24px));
+  max-height: var(--toc-max, calc(100vh - 150px));
+  max-height: var(--toc-max, calc(100dvh - 150px));
+  overflow: hidden;
+  padding: 0;
+  border: 1px solid var(--rule);
+  background: var(--paper-2);
+  box-shadow: 0 24px 64px rgba(16, 13, 8, 0.2);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translateY(-8px);
+  transition: opacity 0.18s ease, transform 0.18s ease, visibility 0.18s ease;
+}
+.toc.is-open {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+.toc-list {
+  flex: 1 1 auto;
+  min-height: 0;
   overflow-x: hidden;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
   scrollbar-gutter: stable;
-  padding-left: 20px;
-  border-left: 1px solid var(--rule);
+  padding: 14px 20px 18px;
   /* 目录自己的滚动条：细窄、墨色，悬停转朱砂 */
   scrollbar-width: thin;
   scrollbar-color: color-mix(in srgb, var(--ink-soft) 42%, transparent) transparent;
 }
-.toc::-webkit-scrollbar {
+.toc-list::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
-.toc::-webkit-scrollbar-track {
+.toc-list::-webkit-scrollbar-track {
   background: transparent;
 }
-.toc::-webkit-scrollbar-thumb {
+.toc-list::-webkit-scrollbar-thumb {
   background: rgba(95, 84, 67, 0.4);
   background: color-mix(in srgb, var(--ink-soft) 40%, transparent);
   border-radius: 0;
 }
-.toc::-webkit-scrollbar-thumb:hover {
+.toc-list::-webkit-scrollbar-thumb:hover {
   background: rgba(148, 55, 38, 0.6);
   background: color-mix(in srgb, var(--accent) 60%, transparent);
 }
-.toc::-webkit-scrollbar-corner {
+.toc-list::-webkit-scrollbar-corner {
   background: transparent;
 }
 .toc-head {
+  flex: 0 0 auto;
   display: flex;
-  align-items: baseline;
+  align-items: center;
+  justify-content: space-between;
   gap: 10px;
-  margin-bottom: 14px;
+  margin: 0;
+  padding: 15px 18px 12px 20px;
+  border-bottom: 1px solid var(--rule-soft);
+  background: var(--paper-2);
 }
 .toc-title {
   font-family: var(--font-display);
   font-size: 0.92rem;
   letter-spacing: 0.3em;
   color: var(--ink-strong);
+}
+.toc-close {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  font-family: var(--font-ui);
+  font-size: 1.1rem;
+  line-height: 1;
+  color: var(--ink-soft);
+  cursor: pointer;
+}
+.toc-close:hover,
+.toc-close:focus-visible {
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
 }
 .toc ul {
   list-style: none;
@@ -1050,7 +1093,6 @@ body {
 .toc a {
   display: block;
   padding: 2px 0 2px 12px;
-  margin-left: -21px;
   border-left: 2px solid transparent;
   font-family: var(--font-ui);
   font-size: 0.78rem;
@@ -1157,9 +1199,9 @@ body {
   border-left-color: var(--accent);
 }
 
-@media (max-width: 1040px) {
+@media (prefers-reduced-motion: reduce) {
   .toc {
-    display: none;
+    transition: none;
   }
 }
 
