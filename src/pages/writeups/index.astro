@@ -41,7 +41,7 @@ const counts = CATEGORIES.map((c) => ({
       all.length > 0 && (
         <div class="post-list" id="post-list">
           {all.map((post) => (
-            <div class="post-item" data-cat={post.data.category}>
+            <div class="post-item" data-cat={post.data.category} data-event={post.data.event ?? ''}>
               <PostCard post={post} />
             </div>
           ))}
@@ -60,31 +60,42 @@ const counts = CATEGORIES.map((c) => ({
     const counter = document.getElementById('filter-count');
     if (!buttons.length || !items.length) return;
 
-    function apply(filter) {
+    function apply(filter, event) {
+      event = event || '';
       let shown = 0;
       items.forEach(function (item) {
-        const match = filter === 'all' || item.dataset.cat === filter;
+        const match =
+          (filter === 'all' || item.dataset.cat === filter) &&
+          (!event || item.dataset.event === event);
         item.hidden = !match;
         if (match) shown += 1;
       });
       buttons.forEach(function (b) {
-        b.setAttribute('aria-pressed', b.dataset.filter === filter ? 'true' : 'false');
+        b.setAttribute(
+          'aria-pressed',
+          !event && b.dataset.filter === filter ? 'true' : 'false'
+        );
       });
       if (counter) counter.textContent = '> 匹配 ' + shown + ' 篇';
-      const url = filter === 'all' ? location.pathname : location.pathname + '?cat=' + encodeURIComponent(filter);
+      const params = new URLSearchParams();
+      if (filter !== 'all') params.set('cat', filter);
+      if (event) params.set('event', event);
+      const url = params.toString() ? location.pathname + '?' + params.toString() : location.pathname;
       history.replaceState(null, '', url);
     }
 
     buttons.forEach(function (b) {
       b.addEventListener('click', function () {
-        apply(b.dataset.filter);
+        apply(b.dataset.filter, '');
       });
     });
 
-    const preset = new URLSearchParams(location.search).get('cat');
+    const params = new URLSearchParams(location.search);
+    const preset = params.get('cat');
+    const presetEvent = params.get('event') || '';
     const known = Array.prototype.some.call(buttons, function (b) {
       return b.dataset.filter === preset;
     });
-    apply(known ? preset : 'all');
+    apply(known ? preset : 'all', presetEvent);
   })();
 </script>

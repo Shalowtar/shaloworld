@@ -14,5 +14,5 @@ const { segments } = Astro.props;
 ---
 
 <p class="breadcrumb">
-  <a href="/">~</a>{segments.map((s) => (<><span class="sep">/</span>{s.href ? <>{' '}<a href={s.href}>{s.label}</a></> : <span class={s.cat ? 'cat-tone' : undefined} data-cat={s.cat}>{s.label}</span>}</>))}
+  <a href="/">~</a>{segments.map((s) => (<><span class="sep">/</span>{s.href ? <>{' '}<a href={s.href} class={s.cat ? 'crumb-link cat-tone' : 'crumb-link'} data-cat={s.cat}>{s.label}</a></> : <span class={s.cat ? 'cat-tone' : undefined} data-cat={s.cat}>{s.label}</span>}</>))}
 </p>

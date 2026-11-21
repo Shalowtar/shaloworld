@@ -28,6 +28,18 @@ const prev = index > 0 ? all[index - 1] : null;
 const next = index >= 0 && index < all.length - 1 ? all[index + 1] : null;
 const related = relatedPosts(post, all, 3);
 
+const crumbs = [
+  { label: 'learning', href: '/writeups/' },
+  ...(data.event
+    ? [{ label: data.event, href: `/writeups/?event=${encodeURIComponent(data.event)}` }]
+    : []),
+  {
+    label: data.category,
+    href: `/writeups/?cat=${encodeURIComponent(data.category)}`,
+    cat: data.category,
+  },
+];
+
 /** 学习目录：列出全部文章，每篇下面收着自己的章节书签 */
 const outlines: {
   id: string;
@@ -89,9 +101,7 @@ const articleSchema = {
   <div class="reading-progress" id="reading-progress" aria-hidden="true"></div>
   <div class="wrap">
     <section class="article-top">
-      <Breadcrumb
-        segments={[{ label: 'learning', href: '/writeups/' }, ...(data.event ? [{ label: data.event }] : []), { label: data.category, cat: data.category }]}
-      />
+      <Breadcrumb segments={crumbs} />
 
       <div class="article-badges">
         <span class="badge" data-cat={data.category}>{data.category}</span>
