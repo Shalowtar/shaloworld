@@ -10,7 +10,7 @@ const tags = tagCounts(all);
 const cats = categoryCounts(all, CATEGORIES);
 ---
 
-<BaseLayout title="标签与分类" description="按标签或分类浏览全部学习记录。">
+<BaseLayout title="标签与分类" description="按标签或分类浏览全部文章。">
   <div class="wrap">
     <section class="article-top">
       <Breadcrumb segments={[{ label: 'tags' }]} />
@@ -24,7 +24,7 @@ const cats = categoryCounts(all, CATEGORIES);
     {
       cats.length > 0 && (
         <>
-          <h2 class="index-head">分类</h2>
+          <h2 class="index-head" id="categories">分类</h2>
           <div class="tag-cloud">
             {cats.map((c) => (
               <a href={`/writeups/?cat=${encodeURIComponent(c.name)}`}>
@@ -40,7 +40,7 @@ const cats = categoryCounts(all, CATEGORIES);
     {
       tags.length > 0 && (
         <>
-          <h2 class="index-head">标签</h2>
+          <h2 class="index-head" id="tags">标签</h2>
           <div class="tag-cloud">
             {tags.map((t) => (
               <a href={`/tags/${encodeURIComponent(t.tag)}/`}>

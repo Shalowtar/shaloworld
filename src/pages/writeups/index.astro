@@ -17,11 +17,11 @@ const tocGroups: TocGroup[] = counts.map((c) => ({
 }));
 ---
 
-<BaseLayout title="学习" description="把学过的整理在这里：按分类筛选、按时间倒序。">
+<BaseLayout title="文章" description="项目之外的全部文章：按分类筛选、按时间倒序。">
   <div class="wrap">
     <section class="article-top">
-      <Breadcrumb segments={[{ label: 'learning' }]} />
-      <h1>学习</h1>
+      <Breadcrumb segments={[{ label: 'articles' }]} />
+      <h1>文章</h1>
       <div class="article-meta">
         <span>共 {all.length} 篇</span>
         <span>按时间倒序</span>
@@ -58,7 +58,7 @@ const tocGroups: TocGroup[] = counts.map((c) => ({
         <p class="search-hint" id="filter-count" style="margin-top:22px"></p>
       </div>
 
-      {tocGroups.length > 0 && <SmallToc title="学习目录" groups={tocGroups} />}
+      {tocGroups.length > 0 && <SmallToc title="文章目录" groups={tocGroups} />}
     </div>
   </div>
 </BaseLayout>

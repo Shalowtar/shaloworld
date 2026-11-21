@@ -7,7 +7,7 @@ import { visiblePosts } from '../utils/posts';
 const all = visiblePosts(await getCollection('writeups'));
 ---
 
-<BaseLayout title="搜索" description="全文搜索站内的学习记录。">
+<BaseLayout title="搜索" description="全文搜索站内的文章。">
   <div class="wrap">
     <section class="article-top">
       <Breadcrumb segments={[{ label: 'search' }]} />

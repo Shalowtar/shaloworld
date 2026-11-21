@@ -818,60 +818,95 @@ body {
   color: var(--accent);
 }
 
-/* ---------- 统计 ---------- */
+/* ---------- 统计：四个可点的文字按钮，用留白代替竖分隔线 ---------- */
 .stats {
-  display: flex;
-  border-top: 3px solid var(--ink-strong);
-  border-bottom: 1px solid var(--rule);
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 26px;
+  border: 0;
 }
 .stats-about {
   margin: auto 0 0;
-  border-bottom: 0; /* 底线交给页脚那条，视觉上合成一条 */
 }
 .stats-about .stat {
   gap: 8px;
+  padding: 10px 0 18px;
 }
 .stats-about .stat-date {
-  font-size: 1.15rem;
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-weight: 400;
   letter-spacing: 0.02em;
-}
-@media (max-width: 640px) {
-  .stats-about {
-    flex-wrap: wrap;
-  }
-  .stats-about .stat {
-    flex: 1 1 46%;
-    border-right: 0;
-    border-bottom: 1px solid var(--rule-soft);
-    padding: 14px 0;
-  }
-  .stats-about .stat:last-child {
-    border-bottom: 0;
-  }
+  line-height: 1.4;
 }
 .stat {
-  flex: 1;
   display: flex;
-  align-items: baseline;
-  gap: 10px;
-  padding: 18px 0;
-  border-right: 1px solid var(--rule-soft);
-}
-.stat:last-child {
-  border-right: 0;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 7px;
+  padding: 12px 0 18px;
+  border: 0;
+  color: inherit;
+  text-decoration: none;
 }
 .stat b {
   font-family: var(--font-display);
-  font-size: 2.05rem;
+  font-size: 2rem;
   font-weight: 400;
   line-height: 1;
   color: var(--ink-strong);
+  transition: color 0.16s;
 }
-.stat span {
+.stat .stat-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  width: max-content;
+  padding-bottom: 3px;
+  border-bottom: 1px solid var(--rule-soft);
   font-family: var(--font-ui);
-  font-size: 0.7rem;
+  font-size: 0.72rem;
+  line-height: 1.4;
   letter-spacing: 0.14em;
   color: var(--ink-soft);
+  transition: color 0.16s, border-color 0.16s;
+}
+.stat .stat-arrow {
+  font-size: 0.72em;
+  line-height: 1;
+  opacity: 0.45;
+  transition: opacity 0.16s, transform 0.16s;
+}
+.stat:hover b,
+.stat:hover .stat-label,
+.stat:focus-visible b,
+.stat:focus-visible .stat-label {
+  color: var(--accent);
+}
+.stat:hover .stat-label,
+.stat:focus-visible .stat-label {
+  border-bottom-color: var(--accent);
+}
+.stat:hover .stat-arrow,
+.stat:focus-visible .stat-arrow {
+  opacity: 1;
+  transform: translate(2px, -2px);
+}
+.stat:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+@media (max-width: 640px) {
+  .stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px 24px;
+  }
+  .stats-about {
+    margin-top: 12px;
+  }
+  .stats-about .stat {
+    padding: 8px 0 14px;
+  }
 }
 
 
@@ -1638,6 +1673,7 @@ body {
   margin: 34px 0 8px;
   padding-bottom: 8px;
   border-bottom: 1px solid var(--rule);
+  scroll-margin-top: 120px;
   font-family: var(--font-ui);
   font-size: 0.7rem;
   letter-spacing: 0.2em;

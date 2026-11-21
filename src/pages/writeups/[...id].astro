@@ -29,7 +29,7 @@ const next = index >= 0 && index < all.length - 1 ? all[index + 1] : null;
 const related = relatedPosts(post, all, 3);
 
 const crumbs = [
-  { label: 'learning', href: '/writeups/' },
+  { label: 'articles', href: '/writeups/' },
   {
     label: data.category,
     href: `/writeups/?cat=${encodeURIComponent(data.category)}`,
@@ -45,7 +45,7 @@ const crumbs = [
     : []),
 ];
 
-/** 学习目录：只放当前分区（学习）的分类，分类下再收文章与章节 */
+/** 文章目录：只放当前分区的分类，分类下再收文章与章节 */
 const outlines: {
   id: string;
   title: string;
@@ -166,7 +166,7 @@ const articleSchema = {
 
       {
         tocGroups.length > 0 && (
-          <SmallToc title="学习目录" groups={tocGroups} />
+          <SmallToc title="文章目录" groups={tocGroups} />
         )
       }
     </div>
@@ -198,7 +198,7 @@ const articleSchema = {
       related.length > 0 && (
         <section class="section">
           <div class="section-head">
-            <h2>相关学习</h2>
+            <h2>相关文章</h2>
           </div>
           <div class="post-list">
             {related.map((p) => (
