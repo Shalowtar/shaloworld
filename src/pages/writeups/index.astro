@@ -71,10 +71,9 @@ const counts = CATEGORIES.map((c) => ({
         if (match) shown += 1;
       });
       buttons.forEach(function (b) {
-        b.setAttribute(
-          'aria-pressed',
-          !event && b.dataset.filter === filter ? 'true' : 'false'
-        );
+        const active =
+          b.dataset.filter === filter && (filter !== 'all' || !event);
+        b.setAttribute('aria-pressed', active ? 'true' : 'false');
       });
       if (counter) counter.textContent = '> 匹配 ' + shown + ' 篇';
       const params = new URLSearchParams();
