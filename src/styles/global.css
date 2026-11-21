@@ -995,14 +995,14 @@ body {
   z-index: 45;
   display: flex;
   flex-direction: column;
-  width: min(340px, calc(100vw - 24px));
-  max-height: var(--toc-max, calc(100vh - 150px));
-  max-height: var(--toc-max, calc(100dvh - 150px));
+  width: min(360px, calc(100vw - 28px));
+  max-height: min(480px, var(--toc-max, calc(100vh - 150px)));
+  max-height: min(480px, var(--toc-max, calc(100dvh - 150px)));
   overflow: hidden;
   padding: 0;
   border: 1px solid var(--rule);
   background: var(--paper-2);
-  box-shadow: 0 24px 64px rgba(16, 13, 8, 0.2);
+  box-shadow: 0 18px 48px rgba(16, 13, 8, 0.16);
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
@@ -1023,7 +1023,7 @@ body {
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
   scrollbar-gutter: stable;
-  padding: 14px 20px 18px;
+  padding: 16px 22px 20px;
   /* 目录自己的滚动条：细窄、墨色，悬停转朱砂 */
   scrollbar-width: thin;
   scrollbar-color: color-mix(in srgb, var(--ink-soft) 42%, transparent) transparent;
@@ -1054,20 +1054,20 @@ body {
   justify-content: space-between;
   gap: 10px;
   margin: 0;
-  padding: 15px 18px 12px 20px;
+  padding: 17px 18px 14px 22px;
   border-bottom: 1px solid var(--rule-soft);
   background: var(--paper-2);
 }
 .toc-title {
   font-family: var(--font-display);
-  font-size: 0.92rem;
-  letter-spacing: 0.3em;
+  font-size: 0.98rem;
+  letter-spacing: 0.28em;
   color: var(--ink-strong);
 }
 .toc-close {
   display: grid;
-  width: 28px;
-  height: 28px;
+  width: 30px;
+  height: 30px;
   place-items: center;
   padding: 0;
   border: 0;
@@ -1088,15 +1088,15 @@ body {
   list-style: none;
 }
 .toc li {
-  margin: 0 0 6px;
+  margin: 0 0 7px;
 }
 .toc a {
   display: block;
-  padding: 2px 0 2px 12px;
+  padding: 3px 0 3px 12px;
   border-left: 2px solid transparent;
   font-family: var(--font-ui);
-  font-size: 0.78rem;
-  line-height: 1.65;
+  font-size: 0.8rem;
+  line-height: 1.7;
   letter-spacing: 0.03em;
   color: var(--ink-soft);
   transition: color 0.15s, border-color 0.15s;
@@ -1112,8 +1112,8 @@ body {
   align-items: baseline;
   gap: 8px;
   font-family: var(--font-display);
-  font-size: 0.84rem;
-  line-height: 1.5;
+  font-size: 0.86rem;
+  line-height: 1.55;
   letter-spacing: 0.01em;
   color: var(--ink-strong);
 }
@@ -1185,12 +1185,12 @@ body {
 .toc .toc-sub a {
   margin-left: -1px;
   padding-left: 10px;
-  font-size: 0.74rem;
+  font-size: 0.76rem;
   opacity: 0.9;
 }
 .toc .toc-sub li.is-deep a {
   padding-left: 20px;
-  font-size: 0.71rem;
+  font-size: 0.73rem;
   opacity: 0.82;
 }
 .toc .toc-sub a:hover,
