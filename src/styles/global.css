@@ -818,40 +818,42 @@ body {
   color: var(--accent);
 }
 
-/* ---------- 统计：四个可点的文字按钮，用留白代替竖分隔线 ---------- */
+/* ---------- 统计：四个紧凑的可点按钮 ---------- */
 .stats {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 26px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 10px;
   border: 0;
 }
 .stats-about {
   margin: auto 0 0;
 }
 .stats-about .stat {
-  gap: 8px;
-  padding: 10px 0 18px;
+  gap: 6px;
+  padding: 4px 8px;
 }
 .stats-about .stat-date {
   font-family: var(--font-display);
-  font-size: 1.05rem;
+  font-size: 0.95rem;
   font-weight: 400;
   letter-spacing: 0.02em;
-  line-height: 1.4;
+  line-height: 1.3;
 }
 .stat {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 7px;
-  padding: 12px 0 18px;
-  border: 0;
+  display: inline-flex;
+  flex-direction: row;
+  align-items: baseline;
+  gap: 6px;
+  padding: 4px 8px;
+  border: 1px solid var(--rule-soft);
+  background: transparent;
   color: inherit;
   text-decoration: none;
+  transition: border-color 0.16s, background-color 0.16s;
 }
 .stat b {
   font-family: var(--font-display);
-  font-size: 2rem;
+  font-size: 1.35rem;
   font-weight: 400;
   line-height: 1;
   color: var(--ink-strong);
@@ -860,16 +862,13 @@ body {
 .stat .stat-label {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  width: max-content;
-  padding-bottom: 3px;
-  border-bottom: 1px solid var(--rule-soft);
+  gap: 4px;
   font-family: var(--font-ui);
-  font-size: 0.72rem;
+  font-size: 0.66rem;
   line-height: 1.4;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.12em;
   color: var(--ink-soft);
-  transition: color 0.16s, border-color 0.16s;
+  transition: color 0.16s;
 }
 .stat .stat-arrow {
   font-size: 0.72em;
@@ -877,15 +876,15 @@ body {
   opacity: 0.45;
   transition: opacity 0.16s, transform 0.16s;
 }
+.stat:hover {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--paper-2) 72%, transparent);
+}
 .stat:hover b,
 .stat:hover .stat-label,
 .stat:focus-visible b,
 .stat:focus-visible .stat-label {
   color: var(--accent);
-}
-.stat:hover .stat-label,
-.stat:focus-visible .stat-label {
-  border-bottom-color: var(--accent);
 }
 .stat:hover .stat-arrow,
 .stat:focus-visible .stat-arrow {
@@ -894,18 +893,24 @@ body {
 }
 .stat:focus-visible {
   outline: 2px solid var(--accent);
-  outline-offset: 3px;
+  outline-offset: 2px;
 }
 @media (max-width: 640px) {
   .stats {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 18px 24px;
+    display: grid;
+    grid-template-columns: max-content max-content;
+    justify-content: start;
+    justify-items: start;
+    gap: 8px 10px;
   }
   .stats-about {
     margin-top: 12px;
   }
   .stats-about .stat {
-    padding: 8px 0 14px;
+    padding: 4px 7px;
+  }
+  .stat b {
+    font-size: 1.2rem;
   }
 }
 
