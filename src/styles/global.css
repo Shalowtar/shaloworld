@@ -2022,6 +2022,15 @@ html[data-pop="on"] .toc {
 .dir-group-head:hover .dir-group-name {
   color: var(--accent);
 }
+.dir-group-head.is-static {
+  cursor: default;
+}
+.dir-group-head.is-static:hover {
+  border-bottom-color: var(--rule);
+}
+.dir-group-head.is-static:hover .dir-group-name {
+  color: var(--ink-strong);
+}
 .dir-group-no {
   font-family: var(--font-ui);
   font-size: 0.66rem;
