@@ -182,33 +182,21 @@ const { title, groups } = Astro.props;
       else window.location.href = href;
     }
 
-    let pendingClick = null;
     panel.querySelectorAll('.has-sub').forEach(function (link) {
-      /* 单击：展开 / 收起这一组 */
+      /* 单击：立即展开 / 收起这一组；双击的第二下不再重复切换 */
       link.addEventListener('click', function (e) {
         e.preventDefault();
-        if (pendingClick) clearTimeout(pendingClick);
-        pendingClick = setTimeout(function () {
-          pendingClick = null;
-          setGroup(link, link.getAttribute('aria-expanded') !== 'true');
-        }, 220);
+        if (e.detail > 1) return;
+        setGroup(link, link.getAttribute('aria-expanded') !== 'true');
       });
       /* 双击：分类名 → 去筛选；文章名 → 打开文章 */
       link.addEventListener('dblclick', function (e) {
         e.preventDefault();
-        if (pendingClick) {
-          clearTimeout(pendingClick);
-          pendingClick = null;
-        }
         go(link.getAttribute('href'));
       });
       link.addEventListener('keydown', function (e) {
         if (e.key !== 'Enter' && e.key !== ' ') return;
         e.preventDefault();
-        if (pendingClick) {
-          clearTimeout(pendingClick);
-          pendingClick = null;
-        }
         go(link.getAttribute('href'));
       });
     });

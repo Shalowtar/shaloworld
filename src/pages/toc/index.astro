@@ -282,11 +282,9 @@ const totalPosts = all.length;
 </BaseLayout>
 
 <script is:inline>
-  /* 大目录：单击展开、双击跳转；子分类只展开/收起 */
+  /* 大目录：单击立即展开、双击跳转；子分类只展开/收起 */
   (function () {
     document.querySelectorAll('[data-dir-toggle]').forEach(function (el) {
-      var timer = null;
-
       function toggle() {
         var open = el.getAttribute('aria-expanded') === 'true';
         el.setAttribute('aria-expanded', open ? 'false' : 'true');
@@ -296,29 +294,18 @@ const totalPosts = all.length;
 
       el.addEventListener('click', function (e) {
         e.preventDefault();
-        if (timer) clearTimeout(timer);
-        timer = setTimeout(function () {
-          timer = null;
-          toggle();
-        }, 220);
+        if (e.detail > 1) return;
+        toggle();
       });
 
       el.addEventListener('dblclick', function (e) {
         e.preventDefault();
-        if (timer) {
-          clearTimeout(timer);
-          timer = null;
-        }
         if (el.dataset.href) window.location.href = el.dataset.href;
       });
 
       el.addEventListener('keydown', function (e) {
         if (e.key !== 'Enter' && e.key !== ' ') return;
         e.preventDefault();
-        if (timer) {
-          clearTimeout(timer);
-          timer = null;
-        }
         toggle();
       });
     });
