@@ -1,5 +1,5 @@
 ---
-title: 'C 语言练习 · Switch-case'
+title: 'C 语言学习 · Switch-case'
 summary: '用 switch-case 替代一串 if 判断，第一次忘了写 break 看到 case 一路穿透，补上 break 和 while 循环后程序能连续读数。'
 category: C
 subcategories: ['学习']

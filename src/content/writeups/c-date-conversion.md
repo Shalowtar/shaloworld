@@ -1,5 +1,5 @@
 ---
-title: 'C 语言学习 · 日期换算'
+title: 'C 语言练习 · 日期换算'
 summary: '实验课作业：日期转天数、天数反推日期。初版四个坑（if 里写 break、&& 和 || 混、逗号表达式、没做范围校验），改完又踩到 scanf_s 残留换行让 fgets 读到空行。'
 category: C
 subcategories: ['练习']
