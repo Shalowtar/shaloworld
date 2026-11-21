@@ -48,6 +48,14 @@ const siteSchema = {
     <meta name="generator" content={Astro.generator} />
     <meta name="author" content={SITE.author} />
     <meta name="theme-color" content="#ece5d6" />
+    <!-- 先于样式表铺纸色：iOS Safari 跨页时会先给一帧空白，别让它白闪 -->
+    <style is:inline>
+      html,
+      body {
+        background: #ece5d6;
+        color-scheme: light;
+      }
+    </style>
 
     <meta property="og:type" content={type} />
     <meta property="og:title" content={fullTitle} />

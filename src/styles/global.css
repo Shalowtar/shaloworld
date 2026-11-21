@@ -37,6 +37,26 @@ html[data-toc="off"] {
   --text-measure: 84ch;
 }
 
+/* iOS Safari 跨页默认会先闪一帧白底；开启跨文档视图过渡，让旧页留在屏幕上淡入新页 */
+@view-transition {
+  navigation: auto;
+}
+::view-transition {
+  background-color: var(--paper);
+}
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 260ms;
+  animation-timing-function: ease;
+  mix-blend-mode: normal;
+}
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none;
+  }
+}
+
 /* ---------- 基础 ---------- */
 *,
 *::before,
@@ -44,6 +64,7 @@ html[data-toc="off"] {
   box-sizing: border-box;
 }
 html {
+  background: var(--paper);
   -webkit-text-size-adjust: 100%;
   scroll-behavior: smooth;
 }
