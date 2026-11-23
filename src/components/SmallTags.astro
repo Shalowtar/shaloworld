@@ -78,6 +78,7 @@ const { tags } = Astro.props;
     }
 
     if (trigger) {
+      /* 文章页专用：单击打开全部标签浮层，双击留给标签总览页 */
       trigger.addEventListener('click', function (e) {
         e.preventDefault();
         if (e.detail > 1) return;

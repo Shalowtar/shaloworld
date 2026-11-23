@@ -33,7 +33,12 @@ const isActive = (href: string) =>
       >
         目录
       </a>
-      <a class="nav-extra" id="tag-toggle" href="/tags/">
+      <a
+        class="nav-extra"
+        id="tag-toggle"
+        href="/tags/"
+        aria-current={path.startsWith('/tags') ? 'page' : undefined}
+      >
         标签
       </a>
       <a class="nav-extra" href="/search/" aria-current={path.startsWith('/search') ? 'page' : undefined}>

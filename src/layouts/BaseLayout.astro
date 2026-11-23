@@ -21,7 +21,8 @@ const site = Astro.site ?? new URL(SITE.url);
 const canonical = new URL(Astro.url.pathname, site).href;
 const ogImage = new URL(SITE.ogImage, site).href;
 
-const siteTags = tagCounts(visiblePosts(await getCollection('writeups')));
+const isArticle = type === 'article';
+const siteTags = isArticle ? tagCounts(visiblePosts(await getCollection('writeups'))) : [];
 
 /** 结构化数据：JSON 里的 `<` 转义成 \\u003c，避免正文出现 </script> 时把标签顶断 */
 const jsonLd = (data: unknown) => JSON.stringify(data).replace(/</g, '\\u003c');
@@ -106,7 +107,7 @@ const siteSchema = {
       <slot />
     </main>
     <Footer />
-    <SmallTags tags={siteTags} />
+    {isArticle && <SmallTags tags={siteTags} />}
     <InkCursor />
 
     <script is:inline>
