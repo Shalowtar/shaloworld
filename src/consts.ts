@@ -33,6 +33,6 @@ export const DIFFICULTIES = ['Easy', 'Medium', 'Hard', 'Insane'] as const;
 
 /** 目录页二级分类的显示顺序；没有列出的按时间排 */
 export const SUBCATEGORY_ORDER: Record<string, string[]> = {
-  Reverse: ['SparkCTF2026', '其他', '学习周报'],
+  Reverse: ['SparkCTF2026', 'R3CTF2025', '其他', '学习周报'],
   C: ['学习', '练习'],
 };

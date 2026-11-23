@@ -2,7 +2,7 @@
 title: 'R3CTF2025 · Neon Deceit'
 summary: '程序表面只打印 hello world，真正的逻辑藏在没被 IDA 识别成函数的代码里；argc 必须为 7 才进入 ncurses 迷宫，输入十六进制路径，BFS 求最短路拿 flag。'
 category: Reverse
-subcategories: ['其他']
+subcategories: ['R3CTF2025']
 event: R3CTF2025
 tags: ['逆向', 'R3CTF2025']
 tools: ['IDA', 'Python']
