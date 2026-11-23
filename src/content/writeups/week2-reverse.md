@@ -6,6 +6,9 @@ subcategories: ['学习周报']
 publishedAt: 2026-11-21T12:15:00+08:00
 tags:
   - 逆向
+  - RC4
+  - XXTEA
+  - 异或
 tools:
   - IDA
   - x64dbg

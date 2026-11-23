@@ -4,7 +4,7 @@ summary: 'SparkCTF w2 的 tiwate：两处花指令先用 patch 还原，再逆�
 category: Reverse
 subcategories: ['SparkCTF2026', 'week2']
 event: SparkCTF
-tags: ['逆向', 'C语言', 'SparkCTF2026']
+tags: ['逆向', 'C语言', 'SparkCTF2026', '花指令', 'RC4']
 tools: ['IDA', 'x64dbg']
 publishedAt: 2026-11-21T11:00:00+08:00
 ---

@@ -4,7 +4,7 @@ summary: 'UPX 壳头 UPX! 被改成 UPY!，改回后脱壳；IDA 里是 24 字�
 category: Reverse
 subcategories: ['SparkCTF2026', 'week3']
 event: SparkCTF
-tags: ['逆向', 'C语言', 'SparkCTF2026']
+tags: ['逆向', 'C语言', 'SparkCTF2026', 'upx壳', 'XXTEA']
 tools: ['IDA', 'UPX', 'DIE']
 publishedAt: 2026-11-22T09:30:00+08:00
 ---

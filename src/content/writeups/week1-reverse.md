@@ -6,6 +6,7 @@ subcategories: ['学习周报']
 publishedAt: 2026-11-17
 tags:
   - 逆向
+  - XXTEA
 tools:
   - IDA
 attachments:

@@ -4,7 +4,7 @@ summary: 'SparkCTF w3 的 tiwate：核心是控制流平坦化，顺着 case 的
 category: Reverse
 subcategories: ['SparkCTF2026', 'week3']
 event: SparkCTF
-tags: ['逆向', 'C语言', 'SparkCTF2026']
+tags: ['逆向', 'C语言', 'SparkCTF2026', '控制流平坦化', '矩阵加密']
 tools: ['IDA']
 publishedAt: 2026-11-23T10:30:00+08:00
 ---
