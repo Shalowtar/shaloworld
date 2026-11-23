@@ -2,12 +2,12 @@
 import Breadcrumb from '../components/Breadcrumb.astro';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import { getCollection } from 'astro:content';
-import { SITE, CATEGORIES } from '../consts';
-import { visiblePosts, tagCounts, formatDate, categoryCounts } from '../utils/posts';
+import { SITE } from '../consts';
+import { visiblePosts, tagCounts, formatDate } from '../utils/posts';
+import { PROJECTS } from '../data/projects';
 
 const all = visiblePosts(await getCollection('writeups'));
 const tags = tagCounts(all);
-const cats = categoryCounts(all, CATEGORIES);
 
 /** 「最后更新」跟着最近改过的那篇文章走，点进去就是它 */
 const latestPost = all.length
@@ -57,9 +57,13 @@ const lastUpdate = latestPost ? latestPost.data.updatedAt ?? latestPost.data.pub
             <b>{tags.length}</b>
             <span class="stat-label">标签<span class="stat-arrow" aria-hidden="true">↗</span></span>
           </a>
-          <a class="stat" href="/tags/#categories" aria-label={`查看 ${cats.length} 个分类`}>
-            <b>{cats.length}</b>
-            <span class="stat-label">分类<span class="stat-arrow" aria-hidden="true">↗</span></span>
+          <a
+            class="stat"
+            href="/projects/"
+            aria-label={PROJECTS.length > 0 ? `查看 ${PROJECTS.length} 个项目` : '查看项目'}
+          >
+            {PROJECTS.length > 0 ? <b>{PROJECTS.length}</b> : <b class="stat-date">筹备中</b>}
+            <span class="stat-label">项目<span class="stat-arrow" aria-hidden="true">↗</span></span>
           </a>
           <a
             class="stat"
