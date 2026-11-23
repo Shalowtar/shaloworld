@@ -2,6 +2,7 @@
 import Breadcrumb from '../../components/Breadcrumb.astro';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import SmallToc from '../../components/SmallToc.astro';
+import SmallTags from '../../components/SmallTags.astro';
 import { getCollection, render } from 'astro:content';
 import { CATEGORIES, SITE } from '../../consts';
 import {
@@ -167,6 +168,12 @@ const articleSchema = {
       {
         tocGroups.length > 0 && (
           <SmallToc title="文章目录" groups={tocGroups} />
+        )
+      }
+
+      {
+        data.tags.length > 0 && (
+          <SmallTags tags={data.tags} />
         )
       }
     </div>

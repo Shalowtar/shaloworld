@@ -1,0 +1,108 @@
+---
+interface Props {
+  tags: string[];
+}
+
+const { tags } = Astro.props;
+---
+
+<aside
+  class="toc tag-panel"
+  id="tag-panel"
+  aria-label="文章标签"
+  aria-hidden="true"
+  inert
+>
+  <div class="toc-head">
+    <span class="toc-title">文章标签</span>
+    <button class="toc-close" id="tag-close" type="button" aria-label="关闭标签">×</button>
+  </div>
+  <div class="tag-body">
+    <ul class="article-tag-list">
+      {
+        tags.map((tag) => (
+          <li>
+            <a href={`/tags/${encodeURIComponent(tag)}/`}>
+              <span class="hash">#</span>
+              {tag}
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+    <a class="tag-all" href="/tags/">
+      <span>全部标签</span>
+      <span aria-hidden="true">→</span>
+    </a>
+  </div>
+</aside>
+
+<script is:inline>
+  (function () {
+    const panel = document.getElementById('tag-panel');
+    if (!panel) return;
+    const trigger = document.getElementById('tag-toggle');
+    const closeBtn = document.getElementById('tag-close');
+    const navbar = document.querySelector('.navbar');
+    const navTools = document.querySelector('.nav-tools');
+    let isOpen = false;
+
+    if (trigger) {
+      trigger.setAttribute('aria-controls', 'tag-panel');
+      trigger.setAttribute('aria-expanded', 'false');
+    }
+
+    function place() {
+      if (!navbar) return;
+      const top = Math.round(navbar.getBoundingClientRect().bottom + 8);
+      const anchor = navTools || navbar;
+      const right = Math.max(12, Math.round(window.innerWidth - anchor.getBoundingClientRect().right));
+      panel.style.setProperty('--toc-top', top + 'px');
+      panel.style.setProperty('--toc-right', right + 'px');
+      panel.style.setProperty('--toc-max', Math.max(180, window.innerHeight - top - 16) + 'px');
+    }
+
+    function setOpen(next, focusTrigger) {
+      isOpen = next;
+      panel.classList.toggle('is-open', next);
+      panel.setAttribute('aria-hidden', next ? 'false' : 'true');
+      if (next) panel.removeAttribute('inert');
+      else panel.setAttribute('inert', '');
+      if (trigger) trigger.setAttribute('aria-expanded', next ? 'true' : 'false');
+      if (next) {
+        place();
+        if (closeBtn) closeBtn.focus({ preventScroll: true });
+      } else if (focusTrigger && trigger) {
+        trigger.focus({ preventScroll: true });
+      }
+    }
+
+    if (trigger) {
+      trigger.addEventListener('click', function (e) {
+        e.preventDefault();
+        if (e.detail > 1) return;
+        setOpen(!isOpen);
+      });
+      trigger.addEventListener('dblclick', function (e) {
+        e.preventDefault();
+        window.location.href = trigger.getAttribute('href') || '/tags/';
+      });
+    }
+    if (closeBtn) {
+      closeBtn.addEventListener('click', function () {
+        setOpen(false, true);
+      });
+    }
+    document.addEventListener('click', function (e) {
+      if (!isOpen) return;
+      if (panel.contains(e.target) || (trigger && trigger.contains(e.target))) return;
+      setOpen(false, false);
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && isOpen) setOpen(false, true);
+    });
+    window.addEventListener('resize', function () {
+      if (isOpen) place();
+    });
+  })();
+</script>

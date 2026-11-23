@@ -299,6 +299,7 @@ ol {
   font-family: var(--font-ui);
   font-size: 0.8rem;
   letter-spacing: 0.1em;
+  white-space: nowrap;
   color: var(--ink-soft);
   padding-bottom: 2px;
   border-bottom: 1px solid transparent;
@@ -312,6 +313,7 @@ ol {
   display: flex;
   align-items: center;
   gap: 18px;
+  flex-shrink: 0;
 }
 .nav a[aria-current="page"],
 .nav-extra[aria-current="page"] {
@@ -334,9 +336,28 @@ ol {
   .nav {
     gap: 16px;
   }
+  .nav-tools {
+    gap: 12px;
+  }
   .nav a,
   .nav-extra {
     font-size: 0.76rem;
+  }
+}
+@media (max-width: 380px) {
+  .navbar {
+    gap: 8px;
+  }
+  .nav {
+    gap: 9px;
+  }
+  .nav-tools {
+    gap: 8px;
+  }
+  .nav a,
+  .nav-extra {
+    font-size: 0.7rem;
+    letter-spacing: 0.05em;
   }
 }
 
@@ -1244,6 +1265,68 @@ body {
   .toc {
     transition: none;
   }
+}
+
+/* ---------- 标签：复用目录小浮层，内容换成文章标签 ---------- */
+.tag-panel {
+  width: min(330px, calc(100vw - 28px));
+}
+.tag-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  padding: 16px 20px 18px;
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--ink-soft) 42%, transparent) transparent;
+}
+.article-tag-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.article-tag-list a {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 3px;
+  padding: 5px 9px;
+  border: 1px solid var(--rule);
+  background: var(--paper);
+  font-family: var(--font-ui);
+  font-size: 0.78rem;
+  color: var(--ink);
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+.article-tag-list a:hover,
+.article-tag-list a:focus-visible {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 7%, transparent);
+  color: var(--accent);
+}
+.article-tag-list .hash {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  color: var(--accent);
+}
+.tag-all {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 15px;
+  padding-top: 12px;
+  border-top: 1px solid var(--rule-soft);
+  font-family: var(--font-ui);
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  color: var(--ink-soft);
+}
+.tag-all:hover {
+  color: var(--accent);
 }
 
 /* ---------- 正文排版 ---------- */
