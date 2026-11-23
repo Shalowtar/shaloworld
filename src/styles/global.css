@@ -1294,12 +1294,34 @@ body {
 .tag-body {
   flex: 1 1 auto;
   min-height: 0;
+  overflow-x: hidden;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
-  padding: 16px 20px 18px;
+  scrollbar-gutter: stable;
+  scroll-padding: 8px;
+  padding: 16px 20px 12px;
   scrollbar-width: thin;
   scrollbar-color: color-mix(in srgb, var(--ink-soft) 42%, transparent) transparent;
+}
+.tag-body::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.tag-body::-webkit-scrollbar-track {
+  background: transparent;
+}
+.tag-body::-webkit-scrollbar-thumb {
+  background: rgba(95, 84, 67, 0.4);
+  background: color-mix(in srgb, var(--ink-soft) 40%, transparent);
+  border-radius: 0;
+}
+.tag-body::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 55, 38, 0.6);
+  background: color-mix(in srgb, var(--accent) 60%, transparent);
+}
+.tag-body::-webkit-scrollbar-corner {
+  background: transparent;
 }
 .article-tag-list {
   display: flex;
@@ -1339,13 +1361,15 @@ body {
   color: var(--ink-soft);
 }
 .tag-all {
+  flex: 0 0 auto;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  margin-top: 15px;
-  padding-top: 12px;
+  margin: 0;
+  padding: 12px 20px 14px;
   border-top: 1px solid var(--rule-soft);
+  background: var(--paper-2);
   font-family: var(--font-ui);
   font-size: 0.72rem;
   letter-spacing: 0.08em;
