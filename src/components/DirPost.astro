@@ -6,7 +6,6 @@ export interface DirPostData {
   title: string;
   date: Date;
   subcategories: string[];
-  headings: { depth: number; slug: string; text: string }[];
 }
 
 interface Props {
@@ -17,41 +16,10 @@ const { post } = Astro.props;
 ---
 
 <article class="dir-post">
-  {
-    post.headings.length > 0 ? (
-      <button
-        class="dir-post-head"
-        type="button"
-        data-dir-toggle
-        data-href={`/writeups/${post.id}/`}
-        aria-expanded="false"
-      >
-        <span class="dir-post-title">{post.title}</span>
-        <time class="dir-date" datetime={post.date.toISOString()}>
-          {formatDate(post.date)}
-        </time>
-        <span class="dir-caret" aria-hidden="true">
-          ›
-        </span>
-      </button>
-    ) : (
-      <a class="dir-post-head is-link" href={`/writeups/${post.id}/`}>
-        <span class="dir-post-title">{post.title}</span>
-        <time class="dir-date" datetime={post.date.toISOString()}>
-          {formatDate(post.date)}
-        </time>
-      </a>
-    )
-  }
-  {
-    post.headings.length > 0 && (
-      <ul class="dir-heads" hidden>
-        {post.headings.map((h) => (
-          <li class={h.depth === 3 ? 'is-deep' : ''}>
-            <a href={`/writeups/${post.id}/#${h.slug}`}>{h.text}</a>
-          </li>
-        ))}
-      </ul>
-    )
-  }
+  <a class="dir-post-head is-link" href={`/writeups/${post.id}/`}>
+    <span class="dir-post-title">{post.title}</span>
+    <time class="dir-date" datetime={post.date.toISOString()}>
+      {formatDate(post.date)}
+    </time>
+  </a>
 </article>

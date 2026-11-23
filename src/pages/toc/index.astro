@@ -2,7 +2,7 @@
 import Breadcrumb from '../../components/Breadcrumb.astro';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import DirPost, { type DirPostData } from '../../components/DirPost.astro';
-import { getCollection, render } from 'astro:content';
+import { getCollection } from 'astro:content';
 import { CATEGORIES, SUBCATEGORY_ORDER } from '../../consts';
 import { categoryHref } from '../../utils/categories';
 import { PROJECTS } from '../../data/projects';
@@ -39,13 +39,11 @@ for (const cat of CATEGORIES) {
 
   const posts: DirPostData[] = [];
   for (const p of list) {
-    const { headings } = await render(p);
     posts.push({
       id: p.id,
       title: p.data.title,
       date: p.data.publishedAt,
       subcategories: p.data.subcategories,
-      headings: headings.filter((h) => h.depth === 2 || h.depth === 3),
     });
   }
 
@@ -122,7 +120,7 @@ const totalPosts = all.length;
       <div class="article-meta">
         <span>4 个分区</span>
         <span>{totalPosts} 篇文章</span>
-        <span class="dir-hint">单击展开或跳转 · 双击进分类页</span>
+        <span class="dir-hint">分类单击展开 · 双击进分类页</span>
       </div>
     </section>
 
@@ -181,83 +179,70 @@ const totalPosts = all.length;
           {
             groups.map((g) => (
               <section class="dir-cat">
-                {g.subs.length > 0 ? (
-                  <button
-                    class="dir-cat-head"
-                    type="button"
-                    data-dir-toggle
-                    data-href={categoryHref([g.name])}
-                    aria-expanded="false"
-                  >
-                    <span class="dir-cat-name cat-tone" data-cat={g.name}>{g.name}</span>
-                    <span class="dir-cat-meta">{g.count} 篇</span>
-                    <span class="dir-caret" aria-hidden="true">
-                      ›
-                    </span>
-                  </button>
-                ) : (
-                  <a class="dir-cat-head" href={categoryHref([g.name])}>
-                    <span class="dir-cat-name cat-tone" data-cat={g.name}>{g.name}</span>
-                    <span class="dir-cat-meta">{g.count} 篇</span>
-                    <span class="dir-caret" aria-hidden="true">
-                      →
-                    </span>
-                  </a>
-                )}
-                {g.subs.length > 0 && (
-                  <div class="dir-cat-body" hidden>
-                    {g.posts.map((p) => (
-                      <DirPost post={p} />
-                    ))}
+                <button
+                  class="dir-cat-head"
+                  type="button"
+                  data-dir-toggle
+                  data-href={categoryHref([g.name])}
+                  aria-expanded="false"
+                >
+                  <span class="dir-cat-name cat-tone" data-cat={g.name}>{g.name}</span>
+                  <span class="dir-cat-meta">{g.count} 篇</span>
+                  <span class="dir-caret" aria-hidden="true">
+                    ›
+                  </span>
+                </button>
+                <div class="dir-cat-body" hidden>
+                  {g.posts.map((p) => (
+                    <DirPost post={p} />
+                  ))}
 
-                    {g.subs.map((s) => (
-                      <section class="dir-sub">
-                        {s.children.length > 0 ? (
-                          <button
-                            class="dir-sub-head"
-                            type="button"
-                            data-dir-toggle
-                            data-href={categoryHref([g.name, s.name])}
-                            aria-expanded="false"
-                          >
-                            <span class="dir-sub-name">{s.name}</span>
-                            <span class="dir-sub-meta">{s.count} 篇</span>
-                            <span class="dir-caret" aria-hidden="true">
-                              ›
-                            </span>
-                          </button>
-                        ) : (
-                          <a class="dir-sub-head" href={categoryHref([g.name, s.name])}>
-                            <span class="dir-sub-name">{s.name}</span>
-                            <span class="dir-sub-meta">{s.count} 篇</span>
-                            <span class="dir-caret" aria-hidden="true">
-                              →
-                            </span>
-                          </a>
-                        )}
-                        {s.children.length > 0 && (
-                          <div class="dir-sub-body" hidden>
-                            {s.posts.map((p) => (
-                              <DirPost post={p} />
-                            ))}
+                  {g.subs.map((s) => (
+                    <section class="dir-sub">
+                      <button
+                        class="dir-sub-head"
+                        type="button"
+                        data-dir-toggle
+                        data-href={categoryHref([g.name, s.name])}
+                        aria-expanded="false"
+                      >
+                        <span class="dir-sub-name">{s.name}</span>
+                        <span class="dir-sub-meta">{s.count} 篇</span>
+                        <span class="dir-caret" aria-hidden="true">
+                          ›
+                        </span>
+                      </button>
+                      <div class="dir-sub-body" hidden>
+                        {s.posts.map((p) => (
+                          <DirPost post={p} />
+                        ))}
 
-                            {s.children.map((c) => (
-                              <section class="dir-sub is-nested">
-                                <a class="dir-sub-head" href={categoryHref([g.name, s.name, c.name])}>
-                                  <span class="dir-sub-name">{c.name}</span>
-                                  <span class="dir-sub-meta">{c.count} 篇</span>
-                                  <span class="dir-caret" aria-hidden="true">
-                                    →
-                                  </span>
-                                </a>
-                              </section>
-                            ))}
-                          </div>
-                        )}
-                      </section>
-                    ))}
-                  </div>
-                )}
+                        {s.children.map((c) => (
+                          <section class="dir-sub is-nested">
+                            <button
+                              class="dir-sub-head"
+                              type="button"
+                              data-dir-toggle
+                              data-href={categoryHref([g.name, s.name, c.name])}
+                              aria-expanded="false"
+                            >
+                              <span class="dir-sub-name">{c.name}</span>
+                              <span class="dir-sub-meta">{c.count} 篇</span>
+                              <span class="dir-caret" aria-hidden="true">
+                                ›
+                              </span>
+                            </button>
+                            <div class="dir-sub-body" hidden>
+                              {c.posts.map((p) => (
+                                <DirPost post={p} />
+                              ))}
+                            </div>
+                          </section>
+                        ))}
+                      </div>
+                    </section>
+                  ))}
+                </div>
               </section>
             ))
           }
@@ -298,7 +283,7 @@ const totalPosts = all.length;
 </BaseLayout>
 
 <script is:inline>
-  /* 大目录：能继续展开的单击展开、双击跳转；最末级已直接改成链接 */
+  /* 大目录：分类单击展开、双击进分类页；文章直接是链接，单击直达 */
   (function () {
     document.querySelectorAll('[data-dir-toggle]').forEach(function (el) {
       function toggle() {
