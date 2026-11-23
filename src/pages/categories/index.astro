@@ -1,0 +1,54 @@
+---
+import Breadcrumb from '../../components/Breadcrumb.astro';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getCollection } from 'astro:content';
+import { CATEGORIES } from '../../consts';
+import { visiblePosts } from '../../utils/posts';
+import { categoryHref, categoryTree } from '../../utils/categories';
+
+const all = visiblePosts(await getCollection('writeups'));
+const roots = categoryTree(all, CATEGORIES);
+const total = roots.reduce((sum, root) => sum + root.count, 0);
+---
+
+<BaseLayout title="分类" description="按目录层级浏览全部文章分类。">
+  <div class="wrap">
+    <section class="article-top">
+      <Breadcrumb segments={[{ label: 'categories' }]} />
+      <h1>分类</h1>
+      <div class="article-meta">
+        <span>{roots.length} 个大类</span>
+        <span>{total} 篇文章</span>
+      </div>
+    </section>
+
+    <div class="category-index">
+      {
+        roots.map((root) => (
+          <section class="category-card">
+            <div class="category-card-head">
+              <a class="cat-tone" data-cat={root.name} href={categoryHref(root.pathNames)}>
+                {root.name}
+              </a>
+              <span class="category-count">{root.count} 篇</span>
+            </div>
+            {root.children.length > 0 && (
+              <div class="category-card-links">
+                {root.children.map((child) => (
+                  <a href={categoryHref(child.pathNames)}>
+                    <span>{child.name}</span>
+                    <span class="category-count">{child.count}</span>
+                  </a>
+                ))}
+              </div>
+            )}
+          </section>
+        ))
+      }
+    </div>
+
+    <p class="search-hint">
+      <a href="/toc/">← 返回目录</a>
+    </p>
+  </div>
+</BaseLayout>

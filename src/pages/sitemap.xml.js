@@ -1,6 +1,7 @@
 import { getCollection } from 'astro:content';
 import { visiblePosts, tagCounts } from '../utils/posts';
-import { SITE } from '../consts';
+import { CATEGORIES, SITE } from '../consts';
+import { categoryHref, categoryTree, flattenCategoryTree } from '../utils/categories';
 
 export async function GET(context) {
   const posts = visiblePosts(await getCollection('writeups'));
@@ -10,6 +11,8 @@ export async function GET(context) {
     '/',
     ...SITE.nav.map((item) => item.href),
     '/toc/',
+    '/tags/',
+    '/categories/',
     '/other/',
     '/search/',
   ];
@@ -18,6 +21,10 @@ export async function GET(context) {
     ...statics.map((p) => ({ loc: `${site}${p}`, lastmod: null })),
     ...tagCounts(posts).map((t) => ({
       loc: `${site}/tags/${encodeURIComponent(t.tag)}/`,
+      lastmod: null,
+    })),
+    ...flattenCategoryTree(categoryTree(posts, CATEGORIES)).map((node) => ({
+      loc: `${site}${categoryHref(node.pathNames)}`,
       lastmod: null,
     })),
     ...posts.map((post) => ({

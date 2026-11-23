@@ -2,54 +2,32 @@
 import Breadcrumb from '../../components/Breadcrumb.astro';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { getCollection } from 'astro:content';
-import { visiblePosts, tagCounts, categoryCounts } from '../../utils/posts';
-import { CATEGORIES } from '../../consts';
+import { visiblePosts, tagCounts } from '../../utils/posts';
 
 const all = visiblePosts(await getCollection('writeups'));
 const tags = tagCounts(all);
-const cats = categoryCounts(all, CATEGORIES);
 ---
 
-<BaseLayout title="标签与分类" description="按标签或分类浏览全部文章。">
+<BaseLayout title="标签" description="按标签浏览全部文章。">
   <div class="wrap">
     <section class="article-top">
       <Breadcrumb segments={[{ label: 'tags' }]} />
-      <h1>标签与分类</h1>
+      <h1>标签</h1>
       <div class="article-meta">
         <span>{tags.length} 个标签</span>
-        <span>{cats.length} 个分类</span>
       </div>
     </section>
 
     {
-      cats.length > 0 && (
-        <>
-          <h2 class="index-head" id="categories">分类</h2>
-          <div class="tag-cloud">
-            {cats.map((c) => (
-              <a href={`/writeups/?cat=${encodeURIComponent(c.name)}`}>
-                <span class="cat-tone" data-cat={c.name}>{c.name}</span>
-                <span class="n">{c.count}</span>
-              </a>
-            ))}
-          </div>
-        </>
-      )
-    }
-
-    {
       tags.length > 0 && (
-        <>
-          <h2 class="index-head" id="tags">标签</h2>
-          <div class="tag-cloud">
-            {tags.map((t) => (
-              <a href={`/tags/${encodeURIComponent(t.tag)}/`}>
-                #{t.tag}
-                <span class="n">{t.count}</span>
-              </a>
-            ))}
-          </div>
-        </>
+        <div class="tag-cloud">
+          {tags.map((t) => (
+            <a href={`/tags/${encodeURIComponent(t.tag)}/`}>
+              {t.tag}
+              <span class="n">{t.count}</span>
+            </a>
+          ))}
+        </div>
       )
     }
   </div>

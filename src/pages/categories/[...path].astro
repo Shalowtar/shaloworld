@@ -1,0 +1,67 @@
+---
+import Breadcrumb from '../../components/Breadcrumb.astro';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import PostCard from '../../components/PostCard.astro';
+import { getCollection } from 'astro:content';
+import { CATEGORIES } from '../../consts';
+import { visiblePosts } from '../../utils/posts';
+import {
+  categoryHref,
+  categoryRoute,
+  categoryTree,
+  flattenCategoryTree,
+  type CategoryNode,
+} from '../../utils/categories';
+
+export async function getStaticPaths() {
+  const all = visiblePosts(await getCollection('writeups'));
+  return flattenCategoryTree(categoryTree(all, CATEGORIES)).map((node: CategoryNode) => ({
+    params: { path: categoryRoute(node.pathNames) },
+    props: { node },
+  }));
+}
+
+const { node } = Astro.props;
+const crumbs = [
+  { label: 'categories', href: '/categories/' },
+  ...node.pathNames.map((name, i) => ({
+    label: name,
+    href: i === node.pathNames.length - 1 ? undefined : categoryHref(node.pathNames.slice(0, i + 1)),
+    cat: i === 0 ? node.pathNames[0] : undefined,
+  })),
+];
+---
+
+<BaseLayout title={node.name} description={`${node.pathNames.join(' / ')} 分类下的全部文章。`}>
+  <div class="wrap">
+    <section class="article-top category-top">
+      <Breadcrumb segments={crumbs} />
+      <h1><span class="cat-tone" data-cat={node.pathNames[0]}>{node.name}</span></h1>
+      <div class="article-meta">
+        <span>{node.count} 篇</span>
+        {node.children.length > 0 && <span>{node.children.length} 个子分类</span>}
+      </div>
+    </section>
+
+    {
+      node.children.length > 0 && (
+        <nav class="category-children" aria-label="子分类">
+          {node.children.map((child) => (
+            <a href={categoryHref(child.pathNames)}>
+              <span>{child.name}</span>
+              <span class="category-count">{child.count}</span>
+            </a>
+          ))}
+        </nav>
+      )
+    }
+
+    <div class="post-list category-post-list">
+      {node.posts.map((post) => <PostCard post={post} />)}
+    </div>
+
+    <p class="search-hint">
+      <a href="/toc/">← 返回目录</a>
+    </p>
+  </div>
+</BaseLayout>

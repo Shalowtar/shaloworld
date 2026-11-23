@@ -1,6 +1,6 @@
 ---
 interface Props {
-  tags: string[];
+  tags: { tag: string; count: number }[];
 }
 
 const { tags } = Astro.props;
@@ -9,29 +9,29 @@ const { tags } = Astro.props;
 <aside
   class="toc tag-panel"
   id="tag-panel"
-  aria-label="文章标签"
+  aria-label="全部标签"
   aria-hidden="true"
   inert
 >
   <div class="toc-head">
-    <span class="toc-title">文章标签</span>
+    <span class="toc-title">全部标签</span>
     <button class="toc-close" id="tag-close" type="button" aria-label="关闭标签">×</button>
   </div>
   <div class="tag-body">
     <ul class="article-tag-list">
       {
-        tags.map((tag) => (
+        tags.map((item) => (
           <li>
-            <a href={`/tags/${encodeURIComponent(tag)}/`}>
-              <span class="hash">#</span>
-              {tag}
+            <a href={`/tags/${encodeURIComponent(item.tag)}/`}>
+              <span class="tag-name">{item.tag}</span>
+              <span class="tag-count">{item.count}</span>
             </a>
           </li>
         ))
       }
     </ul>
     <a class="tag-all" href="/tags/">
-      <span>全部标签</span>
+      <span>标签总览</span>
       <span aria-hidden="true">→</span>
     </a>
   </div>

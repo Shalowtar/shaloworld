@@ -4,7 +4,6 @@ import { SITE } from '../consts';
 const path = Astro.url.pathname;
 const isActive = (href: string) =>
   href === '/' ? path === '/' : path.startsWith(href.replace(/\/$/, ''));
-const isArticle = path.startsWith('/writeups/') && path !== '/writeups/';
 ---
 
 <header class="site-header">
@@ -34,13 +33,9 @@ const isArticle = path.startsWith('/writeups/') && path !== '/writeups/';
       >
         目录
       </a>
-      {
-        isArticle && (
-          <a class="nav-extra" id="tag-toggle" href="/tags/">
-            标签
-          </a>
-        )
-      }
+      <a class="nav-extra" id="tag-toggle" href="/tags/">
+        标签
+      </a>
       <a class="nav-extra" href="/search/" aria-current={path.startsWith('/search') ? 'page' : undefined}>
         搜索
       </a>

@@ -22,7 +22,6 @@ export const SITE = {
   nav: [
     { label: '项目', href: '/projects/' },
     { label: '文章', href: '/writeups/' },
-    { label: '标签', href: '/tags/' },
     { label: '关于', href: '/about/' },
   ],
 };
