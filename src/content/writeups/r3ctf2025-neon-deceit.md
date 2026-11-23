@@ -4,7 +4,7 @@ summary: '程序表面只打印 hello world，真正的逻辑藏在没被 IDA �
 category: Reverse
 subcategories: ['其他']
 event: R3CTF2025
-tags: ['逆向', '花指令']
+tags: ['逆向', 'R3CTF2025']
 tools: ['IDA', 'Python']
 publishedAt: 2026-11-24T01:05:00+08:00
 ---
