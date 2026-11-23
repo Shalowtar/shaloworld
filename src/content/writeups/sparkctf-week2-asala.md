@@ -4,7 +4,7 @@ summary: 'UPX 脱壳后进 IDA，逆一个 24 字节的异或加密；第一版�
 category: Reverse
 subcategories: ['SparkCTF2026', 'week2']
 event: SparkCTF
-tags: ['逆向', 'C语言', 'SparkCTF2026', 'upx壳', '异或']
+tags: ['逆向', 'C语言', 'SparkCTF2026', 'upx壳', 'XOR']
 tools: ['IDA', 'UPX', 'DIE']
 publishedAt: 2026-11-19T14:40:00+08:00
 ---

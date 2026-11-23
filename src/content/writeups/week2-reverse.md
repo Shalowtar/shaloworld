@@ -8,7 +8,7 @@ tags:
   - 逆向
   - RC4
   - XXTEA
-  - 异或
+  - XOR
 tools:
   - IDA
   - x64dbg
