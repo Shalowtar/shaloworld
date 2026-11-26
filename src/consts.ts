@@ -26,8 +26,8 @@ export const SITE = {
   ],
 };
 
-/** 分类配色（与 global.css 中的 [data-cat] 对应）；C 不是 CTF 分类，用来放纯 C 语言练习；密码学用来放古典/现代密码学的原理练习 */
-export const CATEGORIES = ['Reverse', 'Pwn', 'Crypto', 'Web', 'Misc', 'IoT', 'C', '密码学'] as const;
+/** 分类配色（与 global.css 中的 [data-cat] 对应）；C 用来放纯 C 语言练习，汇编用来放汇编语言学习，密码学用来放古典/现代密码学的原理练习 */
+export const CATEGORIES = ['Reverse', 'Pwn', 'Crypto', 'Web', 'Misc', 'IoT', 'C', '汇编', '密码学'] as const;
 export const DIFFICULTIES = ['Easy', 'Medium', 'Hard', 'Insane'] as const;
 
 /** 目录页二级分类的显示顺序；没有列出的按时间排 */

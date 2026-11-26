@@ -432,6 +432,9 @@ ol {
 .badge[data-cat="C"] {
   color: #6d4c3d;
 }
+.badge[data-cat="汇编"] {
+  color: #6a6530;
+}
 .badge[data-cat="密码学"] {
   color: #5d5470;
 }
@@ -459,6 +462,9 @@ ol {
 }
 .cat-tone[data-cat="C"] {
   color: #6d4c3d;
+}
+.cat-tone[data-cat="汇编"] {
+  color: #6a6530;
 }
 .cat-tone[data-cat="密码学"] {
   color: #5d5470;
