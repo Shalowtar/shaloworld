@@ -93,8 +93,6 @@ const description = data.summary;
 
 const siteUrl = Astro.site ?? new URL(SITE.url);
 const canonical = new URL(Astro.url.pathname, siteUrl).href;
-const shareTitle = `${data.title} · ${SITE.title}`;
-const shareText = data.summary;
 
 /** JSON 里的 `<` 转义成 \u003c，正文出现 </script> 也不会顶断结构化数据标签 */
 const jsonLd = (data: unknown) => JSON.stringify(data).replace(/</g, '\\u003c');
@@ -150,54 +148,15 @@ const articleSchema = {
         <span>{minutes} min 阅读</span>
         {data.solveTime && <span>解题 {data.solveTime}</span>}
         {data.tools.length > 0 && <span>工具 {data.tools.join(' / ')}</span>}
-        <div class="share-wrap">
-          <button class="share-btn" id="share-btn" type="button" aria-expanded="false" aria-controls="share-menu">
-            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-              <circle cx="18" cy="5" r="3"></circle>
-              <circle cx="6" cy="12" r="3"></circle>
-              <circle cx="18" cy="19" r="3"></circle>
-              <path d="M8.6 10.5 15.4 6.5M8.6 13.5l6.8 4"></path>
-            </svg>
-            <span>分享</span>
-          </button>
-          <div class="share-menu" id="share-menu" hidden>
-            <div class="share-menu-head">
-              <span class="share-kicker">SHARE</span>
-              <span class="share-menu-title">分享这篇文章</span>
-            </div>
-            <button class="share-item" type="button" data-share="copy">
-              <span class="share-index">01</span>
-              <span class="share-name">复制链接</span>
-              <span class="share-tail">LINK</span>
-            </button>
-            <button class="share-item" type="button" data-share="wechat">
-              <span class="share-index">02</span>
-              <span class="share-name">微信</span>
-              <span class="share-tail">复制后粘贴</span>
-            </button>
-            <a class="share-item" href={`https://service.weibo.com/share/share.php?url=${encodeURIComponent(canonical)}&title=${encodeURIComponent(shareTitle)}`} target="_blank" rel="noopener noreferrer">
-              <span class="share-index">03</span>
-              <span class="share-name">微博</span>
-              <span class="share-tail">WEIBO ↗</span>
-            </a>
-            <a class="share-item" href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(canonical)}&text=${encodeURIComponent(shareTitle)}`} target="_blank" rel="noopener noreferrer">
-              <span class="share-index">04</span>
-              <span class="share-name">X / Twitter</span>
-              <span class="share-tail">POST ↗</span>
-            </a>
-            <a class="share-item" href={`https://t.me/share/url?url=${encodeURIComponent(canonical)}&text=${encodeURIComponent(shareTitle)}`} target="_blank" rel="noopener noreferrer">
-              <span class="share-index">05</span>
-              <span class="share-name">Telegram</span>
-              <span class="share-tail">SEND ↗</span>
-            </a>
-            <button class="share-item" type="button" data-share="native" hidden>
-              <span class="share-index">06</span>
-              <span class="share-name">系统分享</span>
-              <span class="share-tail">SYSTEM</span>
-            </button>
-            <p class="share-status" aria-live="polite"></p>
-          </div>
-        </div>
+        <button class="share-btn" id="share-btn" type="button" title="复制文章链接">
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <circle cx="18" cy="5" r="3"></circle>
+            <circle cx="6" cy="12" r="3"></circle>
+            <circle cx="18" cy="19" r="3"></circle>
+            <path d="M8.6 10.5 15.4 6.5M8.6 13.5l6.8 4"></path>
+          </svg>
+          <span>分享</span>
+        </button>
       </div>
     </section>
 
@@ -442,33 +401,22 @@ const articleSchema = {
       update();
     }
 
-    /* ---------- 分享本文 ---------- */
-    const shareWrap = document.querySelector('.share-wrap');
+    /* ---------- 分享：点击即复制本文链接 ---------- */
     const share = document.getElementById('share-btn');
-    const shareMenu = document.getElementById('share-menu');
-    const shareStatus = shareMenu && shareMenu.querySelector('.share-status');
-    const shareNative = shareMenu && shareMenu.querySelector('[data-share="native"]');
-
-    if (shareWrap && share && shareMenu) {
+    if (share) {
+      const label = share.querySelector('span') || share;
       const url = location.href.split('?')[0].split('#')[0];
-      const title = document.title;
-      const text = (document.querySelector('.standfirst') || {}).textContent || '';
-      let statusTimer = 0;
-
-      function setStatus(message) {
-        if (!shareStatus) return;
-        shareStatus.textContent = message;
-        clearTimeout(statusTimer);
-        statusTimer = setTimeout(function () {
-          shareStatus.textContent = '';
-        }, 3200);
-      }
+      let resetTimer = 0;
 
       function done(message) {
-        setStatus(message);
+        label.textContent = message;
+        clearTimeout(resetTimer);
+        resetTimer = setTimeout(function () {
+          label.textContent = '分享';
+        }, 1600);
       }
 
-      function fallbackCopy(message) {
+      function fallbackCopy() {
         const ta = document.createElement('textarea');
         ta.value = url;
         ta.style.position = 'fixed';
@@ -478,74 +426,20 @@ const articleSchema = {
         ta.select();
         try {
           document.execCommand('copy');
-          done(message);
+          done('已复制');
         } catch (e) {
-          setStatus('复制失败，请手动复制地址栏链接。');
+          done('复制失败');
         }
         document.body.removeChild(ta);
       }
 
-      function copyUrl(message) {
+      share.addEventListener('click', function () {
         if (navigator.clipboard && navigator.clipboard.writeText) {
           navigator.clipboard.writeText(url).then(function () {
-            done(message);
-          }).catch(function () {
-            fallbackCopy(message);
-          });
+            done('已复制');
+          }).catch(fallbackCopy);
         } else {
-          fallbackCopy(message);
-        }
-      }
-
-      function setOpen(open) {
-        shareMenu.hidden = !open;
-        share.setAttribute('aria-expanded', open ? 'true' : 'false');
-        if (open) {
-          const first = shareMenu.querySelector('.share-item:not([hidden])');
-          if (first) first.focus({ preventScroll: true });
-        }
-      }
-
-      share.addEventListener('click', function () {
-        setOpen(shareMenu.hidden);
-      });
-
-      shareMenu.addEventListener('click', function (e) {
-        const item = e.target.closest('.share-item');
-        if (!item) return;
-        const action = item.getAttribute('data-share');
-        if (action === 'copy') {
-          copyUrl('链接已复制。');
-        } else if (action === 'wechat') {
-          copyUrl('链接已复制，打开微信粘贴给好友。');
-        } else if (action === 'native') {
-          if (navigator.share) {
-            navigator.share({ title: title, text: text, url: url }).then(function () {
-              setOpen(false);
-            }).catch(function (err) {
-              if (err && err.name === 'AbortError') return;
-              copyUrl('系统分享不可用，链接已复制。');
-            });
-          } else {
-            copyUrl('当前浏览器不支持系统分享，链接已复制。');
-          }
-        } else if (item.tagName === 'A') {
-          setOpen(false);
-        }
-      });
-
-      if (shareNative && navigator.share) {
-        shareNative.hidden = false;
-      }
-
-      document.addEventListener('click', function (e) {
-        if (!shareMenu.hidden && !shareWrap.contains(e.target)) setOpen(false);
-      });
-
-      document.addEventListener('keydown', function (e) {
-        if (e.key === 'Escape' && !shareMenu.hidden) {
-          setOpen(false);
-          share.focus();
+          fallbackCopy();
         }
       });
     }
