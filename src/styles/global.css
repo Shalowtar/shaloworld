@@ -2186,9 +2186,15 @@ body {
   background: var(--accent);
 }
 
-/* ---------- 复制本文链接 ---------- */
-.share-btn {
+/* ---------- 分享本文 ---------- */
+.share-wrap {
+  position: relative;
   margin-left: auto;
+}
+.share-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
   padding: 0 0 3px;
   border: 0;
   border-bottom: 1px solid var(--rule);
@@ -2197,11 +2203,140 @@ body {
   font-size: 0.7rem;
   letter-spacing: 0.12em;
   color: var(--ink-soft);
+  cursor: pointer;
   transition: color 0.15s, border-color 0.15s;
 }
-.share-btn:hover {
+.share-btn svg {
+  width: 12px;
+  height: 12px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.4;
+  stroke-linecap: round;
+}
+.share-btn:hover,
+.share-btn[aria-expanded="true"] {
   color: var(--accent);
   border-bottom-color: var(--accent);
+}
+.share-btn:focus-visible {
+  outline: 1px solid var(--accent);
+  outline-offset: 3px;
+}
+.share-menu {
+  position: absolute;
+  top: calc(100% + 12px);
+  right: 0;
+  z-index: 70;
+  width: 242px;
+  padding: 0;
+  border: 1px solid var(--ink);
+  background: var(--paper-2);
+  box-shadow: 6px 6px 0 rgba(36, 30, 23, 0.14);
+}
+.share-menu[hidden] {
+  display: none;
+}
+.share-menu::before {
+  content: "";
+  position: absolute;
+  top: -6px;
+  right: 18px;
+  width: 10px;
+  height: 10px;
+  border-top: 1px solid var(--ink);
+  border-left: 1px solid var(--ink);
+  background: var(--paper-2);
+  transform: rotate(45deg);
+}
+.share-menu-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 11px 14px 9px;
+  border-bottom: 1px solid var(--rule);
+}
+.share-kicker {
+  font-family: var(--font-mono);
+  font-size: 0.58rem;
+  letter-spacing: 0.18em;
+  color: var(--accent);
+}
+.share-menu-title {
+  font-size: 0.74rem;
+  letter-spacing: 0.08em;
+  color: var(--ink-soft);
+}
+.share-item {
+  display: grid;
+  grid-template-columns: 24px 1fr auto;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 14px;
+  border: 0;
+  border-bottom: 1px solid var(--rule-soft);
+  background: none;
+  font-family: var(--font-ui);
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  color: var(--ink);
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+.share-item:hover,
+.share-item:focus-visible {
+  outline: none;
+  background: var(--paper-3);
+  color: var(--accent);
+}
+.share-index {
+  font-family: var(--font-mono);
+  font-size: 0.58rem;
+  letter-spacing: 0.04em;
+  color: var(--ink-soft);
+}
+.share-tail {
+  font-family: var(--font-mono);
+  font-size: 0.56rem;
+  letter-spacing: 0.08em;
+  color: var(--ink-soft);
+}
+.share-status {
+  min-height: 31px;
+  margin: 0;
+  padding: 8px 14px;
+  font-family: var(--font-ui);
+  font-size: 0.64rem;
+  line-height: 1.5;
+  letter-spacing: 0.04em;
+  color: var(--accent-2);
+}
+.share-status:empty {
+  display: none;
+}
+@media (max-width: 600px) {
+  .share-menu {
+    position: fixed;
+    top: auto;
+    right: 14px;
+    bottom: max(14px, env(safe-area-inset-bottom));
+    left: 14px;
+    width: auto;
+    box-shadow: 0 -6px 0 rgba(36, 30, 23, 0.1);
+  }
+  .share-menu::before {
+    display: none;
+  }
+  .share-item {
+    padding: 10px 16px;
+  }
+  .share-status {
+    padding: 9px 16px;
+  }
 }
 
 /* ---------- 快捷键提示 ---------- */
